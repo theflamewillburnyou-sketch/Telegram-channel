@@ -67,8 +67,22 @@ function getPublishedPost(eventId) {
 }
 
 
+function getLatestPublishedAt() {
+
+  const row = db.prepare(`
+    SELECT published_at
+    FROM published_posts
+    ORDER BY published_at DESC
+    LIMIT 1
+  `).get();
+
+  return row?.published_at || null;
+}
+
+
 module.exports = {
   isPublished,
   savePublishedPost,
-  getPublishedPost
+  getPublishedPost,
+  getLatestPublishedAt
 };

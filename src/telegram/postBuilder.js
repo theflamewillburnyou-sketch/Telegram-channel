@@ -13,48 +13,112 @@ function buildTelegramPost(
     detectPostType(event);
 
 
+  const direction =
+    event.direction || "NEUTRAL";
+
+  const magnitude =
+    event.magnitude || "LOW";
+
+  const timeframe =
+    event.timeframe || "MEDIUM_TERM";
+
+  const confidence =
+    event.confidence || "LOW";
+
+
   let message = "";
 
 
+  /*
+   * 1. Hook — stop the scroll
+   */
   message +=
     `${getPostTypeHeader(postType)}\n\n`;
 
 
+  /*
+   * 2. Headline — the story
+   */
   message +=
     `<b>${escapeHtml(event.title)}</b>\n\n`;
 
 
-  // Why it matters
-  if (event.whyItMatters) {
+  /*
+   * 3. Why care — relevance before jargon
+   */
+  const whyItMatters =
+    event.whyItMatters ||
+    buildFallbackWhyItMatters(event);
+
+  if (whyItMatters) {
+    message +=
+      `💡 <b>Why this matters</b>\n`;
 
     message +=
-      `<b>Why it matters:</b>\n`;
-
-    message +=
-      `${escapeHtml(event.whyItMatters)}\n\n`;
+      `${escapeHtml(whyItMatters)}\n\n`;
   }
 
 
-  // Market context
+  /*
+   * 4. Instant take — plain language bias
+   */
   message +=
-    `<b>Market View</b>\n`;
-
-  message +=
-    `Direction: <b>${event.direction}</b>\n`;
-
-  message +=
-    `Magnitude: <b>${event.magnitude}</b>\n`;
+    `🎯 <b>Midnight Society take</b>\n`;
 
   message +=
-    `Timeframe: <b>${event.timeframe}</b>\n`;
+    `${escapeHtml(
+      describeMarketTake(
+        direction,
+        magnitude,
+        timeframe
+      )
+    )}\n\n`;
+
+
+  /*
+   * 5. Quick scan cards — scannable on mobile
+   */
+  message +=
+    `📌 <b>At a glance</b>\n`;
 
   message +=
-    `Confidence: <b>${event.confidence}</b>\n\n`;
+    `• Bias: <b>${escapeHtml(
+      humanDirection(direction)
+    )}</b>\n`;
+
+  message +=
+    `• Strength: <b>${escapeHtml(
+      humanMagnitude(magnitude)
+    )}</b>\n`;
+
+  message +=
+    `• Window: <b>${escapeHtml(
+      humanTimeframe(timeframe)
+    )}</b>\n`;
+
+  message +=
+    `• Confidence: <b>${escapeHtml(
+      humanConfidence(confidence)
+    )}</b>\n`;
 
 
-  // Market reaction
+  const assets =
+    event.affectedAssets || [];
+
+  if (assets.length) {
+    message +=
+      `• Watch: <b>${escapeHtml(
+        assets.join(", ")
+      )}</b>\n`;
+  }
+
+  message += "\n";
+
+
+  /*
+   * 6. Optional live reaction
+   */
   if (marketReactionReport) {
-
     message +=
       buildReactionSection(
         marketReactionReport
@@ -62,49 +126,124 @@ function buildTelegramPost(
   }
 
 
-  // Source
-  if (event.source) {
-
-    message +=
-      `\n<b>Source:</b> ${escapeHtml(
-        event.source
-      )}`;
-  }
-
-
-  if (event.link) {
-
-    message +=
-      `\n<a href="${event.link}">Read source</a>`;
-  }
+  message +=
+    `— <i>Midnight Society</i>`;
 
 
   return message;
 }
 
 
+function describeMarketTake(
+  direction,
+  magnitude,
+  timeframe
+) {
+
+  const bias =
+    humanDirection(direction);
+
+  const strength =
+    humanMagnitude(magnitude);
+
+  const window =
+    humanTimeframe(timeframe);
+
+
+  if (direction === "BULLISH") {
+    return (
+      `Markets may lean ${bias.toLowerCase()} ` +
+      `with ${strength.toLowerCase()} force over the ${window.toLowerCase()}.`
+    );
+  }
+
+  if (direction === "BEARISH") {
+    return (
+      `Pressure looks ${bias.toLowerCase()} ` +
+      `with ${strength.toLowerCase()} intensity over the ${window.toLowerCase()}.`
+    );
+  }
+
+  return (
+    `Signal is mixed for now — watch for confirmation over the ${window.toLowerCase()}.`
+  );
+}
+
+
+function buildFallbackWhyItMatters(event) {
+
+  const assets =
+    event.affectedAssets || [];
+
+  const tags =
+    event.marketTags || [];
+
+
+  if (assets.length && tags.length) {
+    return (
+      `This could move ${assets.join(", ")} ` +
+      `across ${tags.join(", ")} markets.`
+    );
+  }
+
+  if (assets.length) {
+    return (
+      `Traders will watch ${assets.join(", ")} for the next reaction.`
+    );
+  }
+
+  if (tags.length) {
+    return (
+      `This sits in ${tags.join(", ")} — a space where headlines can reprice risk quickly.`
+    );
+  }
+
+  return (
+    "Major market headlines can shift risk appetite before full details are clear."
+  );
+}
+
+
 function buildReactionSection(report) {
+
   if (!report) {
     return "";
   }
 
   let message = "";
 
-  message += `<b>Market Reaction</b>\n`;
+  message +=
+    `📊 <b>Market check</b>\n`;
 
-  message += `1H View: <b>${report.overall}</b>\n`;
-  message += `Expected: <b>${report.expectedDirection}</b>\n`;
+  message +=
+    `Result: <b>${escapeHtml(
+      report.overall
+    )}</b>\n`;
+
+  message +=
+    `Expected: <b>${escapeHtml(
+      report.expectedDirection
+    )}</b>\n`;
 
   if (report.confirmingAssets?.length) {
-    message += `Confirmed: ${report.confirmingAssets.join(", ")}\n`;
+    message +=
+      `✅ Confirmed: ${escapeHtml(
+        report.confirmingAssets.join(", ")
+      )}\n`;
   }
 
   if (report.divergingAssets?.length) {
-    message += `Diverging: ${report.divergingAssets.join(", ")}\n`;
+    message +=
+      `⚠️ Diverging: ${escapeHtml(
+        report.divergingAssets.join(", ")
+      )}\n`;
   }
 
   if (report.neutralAssets?.length) {
-    message += `Neutral: ${report.neutralAssets.join(", ")}\n`;
+    message +=
+      `➖ Quiet: ${escapeHtml(
+        report.neutralAssets.join(", ")
+      )}\n`;
   }
 
   message += "\n";
@@ -117,28 +256,28 @@ function getPostTypeHeader(postType) {
 
   const headers = {
     BREAKING:
-      "🚨 <b>BREAKING MARKET ALERT</b>",
+      "🚨 <b>BREAKING</b>\nThis one just crossed our desk",
 
     GEOPOLITICAL:
-      "🌍 <b>GEOPOLITICAL WATCH</b>",
+      "🌍 <b>GEOPOLITICAL RISK</b>\nWhen the world moves markets",
 
     CRYPTO:
-      "₿ <b>CRYPTO WATCH</b>",
+      "₿ <b>CRYPTO PULSE</b>\nA signal worth a closer look",
 
     MACRO:
-      "🏦 <b>MACRO WATCH</b>",
+      "🏦 <b>MACRO MOVE</b>\nPolicy and the bigger picture",
 
     SUPPLY_SHOCK:
-      "⚡ <b>SUPPLY SHOCK</b>",
+      "⚡ <b>SUPPLY SHOCK</b>\nWhen the flow gets hit",
 
     ETF:
-      "📊 <b>ETF UPDATE</b>",
+      "📊 <b>ETF FLOW</b>\nCapital is shifting",
 
     EARNINGS:
-      "💼 <b>EARNINGS UPDATE</b>",
+      "💼 <b>EARNINGS SIGNAL</b>\nResults that can reprice the tape",
 
     MARKET_UPDATE:
-      "📈 <b>MARKET UPDATE</b>"
+      "📈 <b>MARKET ALERT</b>\nSomething worth your attention"
   };
 
   return (
@@ -148,9 +287,59 @@ function getPostTypeHeader(postType) {
 }
 
 
-function escapeHtml(
-  text
-) {
+function humanDirection(direction) {
+
+  const map = {
+    BULLISH: "Bullish",
+    BEARISH: "Bearish",
+    NEUTRAL: "Neutral / Mixed"
+  };
+
+  return map[direction] || direction;
+}
+
+
+function humanMagnitude(magnitude) {
+
+  const map = {
+    HIGH: "High",
+    MEDIUM: "Moderate",
+    LOW: "Limited"
+  };
+
+  return map[magnitude] || magnitude;
+}
+
+
+function humanTimeframe(timeframe) {
+
+  const map = {
+    IMMEDIATE: "Next hours",
+    SHORT_TERM: "Next few days",
+    MEDIUM_TERM: "Coming weeks"
+  };
+
+  return map[timeframe] || timeframe;
+}
+
+
+function humanConfidence(confidence) {
+
+  const map = {
+    HIGH: "Strong",
+    MEDIUM: "Moderate",
+    LOW: "Early / developing"
+  };
+
+  return map[confidence] || confidence;
+}
+
+
+function escapeHtml(text) {
+
+  if (text === undefined || text === null) {
+    return "";
+  }
 
   return String(text)
     .replace(/&/g, "&amp;")

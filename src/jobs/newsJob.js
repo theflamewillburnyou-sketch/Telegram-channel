@@ -30,6 +30,11 @@ const {
   publishEvent
 } = require("./publishJob");
 
+const {
+  sortByPublishPriority,
+  MAX_POSTS_PER_JOB
+} = require("../telegram/publishPacing");
+
 
 async function runNewsJob() {
 
@@ -88,6 +93,9 @@ async function runNewsJob() {
     );
 
 
+    const publishCandidates = [];
+
+
     for (const event of newEvents) {
 
       console.log(
@@ -97,7 +105,7 @@ async function runNewsJob() {
       try {
 
         /*
-         * 1. Build market event
+         * 1. Build initial market snapshots
          */
 
         const marketEvent =
@@ -114,7 +122,7 @@ async function runNewsJob() {
 
 
         /*
-         * 3. Save initial market snapshots
+         * 3. Save snapshots
          */
 
         for (
@@ -139,7 +147,9 @@ async function runNewsJob() {
         );
 
 
-        // 4. Analyze event
+        /*
+         * 4. Analyze event
+         */
 
         const analysisResult =
           await analyzeEvent(
@@ -152,7 +162,10 @@ async function runNewsJob() {
         );
 
 
-        // 5. Reload latest DB version
+        /*
+         * 5. Reload latest DB version
+         *    (do not publish yet — human pacing)
+         */
 
         const savedEvent =
           getEvent(
@@ -160,20 +173,10 @@ async function runNewsJob() {
           );
 
 
-        // 6. Publish if eligible
-
         if (savedEvent) {
-
-          const publishResult =
-            await publishEvent(
-              savedEvent
-            );
-
-          console.log(
-            "Publish result:",
-            publishResult
+          publishCandidates.push(
+            savedEvent
           );
-
         }
 
       } catch (error) {
@@ -183,6 +186,70 @@ async function runNewsJob() {
           error.message
         );
 
+      }
+    }
+
+
+    /*
+     * 6. Human publishing:
+     *    pick the strongest story only
+     */
+
+    const rankedCandidates =
+      sortByPublishPriority(
+        publishCandidates
+      );
+
+    console.log(
+      `\nPublish candidates: ${rankedCandidates.length}`
+    );
+
+    console.log(
+      `Max posts this run: ${MAX_POSTS_PER_JOB}`
+    );
+
+
+    let publishedCount = 0;
+
+
+    for (const candidate of rankedCandidates) {
+
+      if (
+        publishedCount >=
+        MAX_POSTS_PER_JOB
+      ) {
+        console.log(
+          "Holding remaining stories for later — keeps the channel human"
+        );
+        break;
+      }
+
+      console.log(
+        `\nConsidering for Telegram: ${candidate.title} (score ${candidate.priorityScore})`
+      );
+
+      const publishResult =
+        await publishEvent(
+          candidate
+        );
+
+      console.log(
+        "Publish result:",
+        publishResult
+      );
+
+      if (publishResult.published) {
+        publishedCount += 1;
+      }
+
+      if (
+        publishResult.reason ===
+        "PACING_COOLDOWN"
+      ) {
+        console.log(
+          "Channel cooldown active — remaining stories wait"
+        );
+        break;
       }
     }
 

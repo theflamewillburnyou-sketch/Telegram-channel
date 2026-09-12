@@ -29,6 +29,12 @@ const {
   savePredictionIfNeeded
 } = require("../prediction/savePredictionIfNeeded");
 
+const {
+  getPacingStatus,
+  sortByPublishPriority,
+  MAX_POSTS_PER_JOB
+} = require("../telegram/publishPacing");
+
 
 async function publishEvent(event) {
 
@@ -85,7 +91,31 @@ async function publishEvent(event) {
   }
 
 
-  // 4. Freeze prediction
+  // 4. Human pacing — avoid dumping many posts at once
+
+  const pacing =
+    getPacingStatus();
+
+  if (!pacing.allowed) {
+
+    const waitMinutes =
+      Math.ceil(
+        pacing.waitMs / 60000
+      );
+
+    console.log(
+      `Pacing — waiting ~${waitMinutes} min before next channel post`
+    );
+
+    return {
+      published: false,
+      reason: "PACING_COOLDOWN",
+      waitMs: pacing.waitMs
+    };
+  }
+
+
+  // 5. Freeze prediction
 
   const predictionResult =
     savePredictionIfNeeded(
@@ -117,7 +147,7 @@ async function publishEvent(event) {
   );
 
 
-  // 5. Build post
+  // 6. Build post
 
   const message =
     buildTelegramPost(
@@ -134,7 +164,7 @@ async function publishEvent(event) {
   }
 
 
-  // 6. Final publication safety check
+  // 7. Final publication safety check
 
   if (!event.title) {
     return {
@@ -165,7 +195,7 @@ async function publishEvent(event) {
   console.log(message);
 
 
-  // 7. Publish
+  // 8. Publish
 
   const result =
     await publishMessage(
@@ -173,7 +203,7 @@ async function publishEvent(event) {
     );
 
 
-  // 8. Save publication record
+  // 9. Save publication record
 
   savePublishedPost(
     eventId,
@@ -203,17 +233,47 @@ async function runPublishJob() {
   try {
 
     const events =
-      getAllEvents();
+      sortByPublishPriority(
+        getAllEvents()
+      );
 
     console.log(
       `Events found: ${events.length}`
     );
 
+    console.log(
+      `Max posts this run: ${MAX_POSTS_PER_JOB}`
+    );
+
+
+    let publishedCount = 0;
+
 
     for (const event of events) {
 
-      await publishEvent(event);
+      if (
+        publishedCount >=
+        MAX_POSTS_PER_JOB
+      ) {
+        console.log(
+          "Publish limit reached for this run — holding remaining stories"
+        );
+        break;
+      }
 
+      const result =
+        await publishEvent(event);
+
+      if (result.published) {
+        publishedCount += 1;
+      }
+
+      if (
+        result.reason ===
+        "PACING_COOLDOWN"
+      ) {
+        break;
+      }
     }
 
 
