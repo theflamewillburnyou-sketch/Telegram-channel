@@ -4,6 +4,7 @@ import {
   isPublished
 } from "../d1/publishRepository.js";
 import { logInfo, logWarn } from "../logger.js";
+import { deliverToMatchingSubscribers } from "../telegram/preferenceDelivery.js";
 import { publishAndRecordPost } from "../telegram/publishWithLedger.js";
 
 function pickExport(mod, name) {
@@ -62,6 +63,7 @@ async function getPacingStatus(env) {
 /**
  * Publish one event via Cloudflare Telegram + D1 ledger.
  * Never writes published_posts unless Telegram succeeds.
+ * Also DMs subscribers whose market preference matches.
  */
 export async function publishEvent(env, event, options = {}) {
   const eventId = event.eventId;
@@ -110,12 +112,27 @@ export async function publishEvent(env, event, options = {}) {
     chatId: options.chatId
   });
 
+  let dmResult = { sent: 0, skipped: 0, failed: 0 };
+
+  try {
+    dmResult = await deliverToMatchingSubscribers(env, event, message);
+  } catch (error) {
+    logWarn("PREFERENCE_DM_BATCH_FAILED", {
+      eventId,
+      reason: String(error.message || error)
+    });
+  }
+
   logInfo("TELEGRAM_SUCCESS", {
     eventId,
-    messageId: result.telegramMessageId
+    messageId: result.telegramMessageId,
+    dmSent: dmResult.sent
   });
 
-  return result;
+  return {
+    ...result,
+    dmResult
+  };
 }
 
 export async function runPublishJob(env, options = {}) {

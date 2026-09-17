@@ -1,6 +1,6 @@
 /**
  * Midnight Society — Cloudflare Worker entry.
- * Cron-driven jobs + minimal health. No public Telegram send route.
+ * Cron-driven jobs + Telegram webhook for welcome/preferences.
  */
 import { getConfig, hasDedicatedTelegramTestDestination } from "./config.js";
 import { dbGet } from "./d1/client.js";
@@ -11,13 +11,17 @@ import { runPerformanceJob } from "./jobs/performanceJob.js";
 import { runPublishJob } from "./jobs/publishJob.js";
 import { logError, logInfo, logWarn } from "./logger.js";
 import { getTelegramMe } from "./telegram/getMe.js";
+import {
+  handleTelegramUpdate,
+  verifyTelegramWebhookSecret
+} from "./telegram/webhookHandler.js";
 
 function json(data, status = 200) {
   return Response.json(data, { status });
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.pathname === "/health") {
@@ -45,7 +49,6 @@ export default {
       }
     }
 
-    // Auth-only Telegram check — does not send a channel message.
     if (url.pathname === "/health/telegram") {
       try {
         const me = await getTelegramMe(env);
@@ -68,6 +71,34 @@ export default {
       }
     }
 
+    // Telegram webhook — welcome + market preference
+    if (url.pathname === "/telegram/webhook" && request.method === "POST") {
+      const allowed = await verifyTelegramWebhookSecret(request, env);
+
+      if (!allowed) {
+        return json({ status: "UNAUTHORIZED" }, 401);
+      }
+
+      let update;
+
+      try {
+        update = await request.json();
+      } catch (_error) {
+        return json({ status: "BAD_REQUEST" }, 400);
+      }
+
+      ctx.waitUntil(
+        handleTelegramUpdate(env, update).catch((error) => {
+          logError("WEBHOOK_ASYNC_FAILURE", {
+            reason: String(error.message || error)
+          });
+        })
+      );
+
+      // Acknowledge quickly so Telegram does not retry
+      return json({ status: "OK" });
+    }
+
     return new Response("Midnight Society Cloudflare Worker is running.", {
       status: 200,
       headers: { "content-type": "text/plain; charset=utf-8" }
@@ -78,8 +109,6 @@ export default {
     const cron = event.cron || "";
     logInfo("CRON_TRIGGER", { cron });
 
-    // Default: disable production Telegram until test destination exists
-    // or CF_ALLOW_PRODUCTION_TELEGRAM=true is explicitly set.
     const allowProductionTelegram =
       getConfig(env).telegramTestChannelId ||
       String(env.CF_ALLOW_PRODUCTION_TELEGRAM || "").toLowerCase() === "true";
@@ -98,8 +127,9 @@ export default {
       (async () => {
         try {
           if (cron === "*/5 * * * *") {
-            // Split heavy work across the same 5-minute tick by minute bucket.
-            const minute = new Date(event.scheduledTime || Date.now()).getUTCMinutes();
+            const minute = new Date(
+              event.scheduledTime || Date.now()
+            ).getUTCMinutes();
 
             if (minute % 10 < 5) {
               await runNewsJob(env, {
@@ -134,7 +164,6 @@ export default {
             return;
           }
 
-          // Fallback for unexpected cron expressions
           logWarn("CRON_UNMAPPED", { cron });
           await runNewsJob(env, {
             ...telegramOptions,

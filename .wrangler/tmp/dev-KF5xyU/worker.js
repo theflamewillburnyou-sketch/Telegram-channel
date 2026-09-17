@@ -634,13 +634,13 @@ var init_eventRepository = __esm({
 var require_marketReactionMessage = __commonJS({
   "src/telegram/marketReactionMessage.js"(exports, module) {
     init_modules_watch_stub();
-    function escapeHtml(text) {
+    function escapeHtml2(text) {
       if (text === void 0 || text === null) {
         return "";
       }
       return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
-    __name(escapeHtml, "escapeHtml");
+    __name(escapeHtml2, "escapeHtml");
     function formatPercentage(value) {
       const number = Number(value);
       if (!Number.isFinite(number)) {
@@ -651,31 +651,31 @@ var require_marketReactionMessage = __commonJS({
     __name(formatPercentage, "formatPercentage");
     function buildMarketReactionMessage(event, reaction) {
       let message = "";
-      message += `\u{1F4CA} <b>MARKET REACTION \u2014 ${escapeHtml(reaction.horizon)}</b>
+      message += `\u{1F4CA} <b>MARKET REACTION \u2014 ${escapeHtml2(reaction.horizon)}</b>
 
 `;
-      message += `<b>${escapeHtml(event.title)}</b>
+      message += `<b>${escapeHtml2(event.title)}</b>
 
 `;
-      message += `<b>Expected:</b> ${escapeHtml(reaction.expectedDirection)}
+      message += `<b>Expected:</b> ${escapeHtml2(reaction.expectedDirection)}
 `;
-      message += `<b>Result:</b> ${escapeHtml(reaction.overall)}
+      message += `<b>Result:</b> ${escapeHtml2(reaction.overall)}
 
 `;
       if (reaction.confirmingAssets?.length) {
-        message += `<b>Confirmed:</b> ${escapeHtml(
+        message += `<b>Confirmed:</b> ${escapeHtml2(
           reaction.confirmingAssets.join(", ")
         )}
 `;
       }
       if (reaction.divergingAssets?.length) {
-        message += `<b>Diverging:</b> ${escapeHtml(
+        message += `<b>Diverging:</b> ${escapeHtml2(
           reaction.divergingAssets.join(", ")
         )}
 `;
       }
       if (reaction.neutralAssets?.length) {
-        message += `<b>Neutral:</b> ${escapeHtml(
+        message += `<b>Neutral:</b> ${escapeHtml2(
           reaction.neutralAssets.join(", ")
         )}
 `;
@@ -685,8 +685,8 @@ var require_marketReactionMessage = __commonJS({
         message += `<b>Asset Moves</b>
 `;
         for (const asset of reaction.reactions) {
-          message += `${escapeHtml(asset.symbol)}: `;
-          message += `${escapeHtml(
+          message += `${escapeHtml2(asset.symbol)}: `;
+          message += `${escapeHtml2(
             formatPercentage(
               asset.percentageChange
             )
@@ -695,7 +695,7 @@ var require_marketReactionMessage = __commonJS({
         }
       }
       message += `
-<b>Overall:</b> ${escapeHtml(reaction.overall)}`;
+<b>Overall:</b> ${escapeHtml2(reaction.overall)}`;
       return message;
     }
     __name(buildMarketReactionMessage, "buildMarketReactionMessage");
@@ -753,6 +753,194 @@ var require_event = __commonJS({
       createEventId,
       createMarketEvent: createMarketEvent2,
       addSnapshot: addSnapshot2
+    };
+  }
+});
+
+// src/news/rssSources.js
+var require_rssSources = __commonJS({
+  "src/news/rssSources.js"(exports, module) {
+    init_modules_watch_stub();
+    var NEWS_SOURCES2 = [
+      // Geopolitics (can spill into all markets)
+      {
+        name: "BBC World",
+        url: "https://feeds.bbci.co.uk/news/world/rss.xml",
+        category: "geopolitics"
+      },
+      {
+        name: "Al Jazeera",
+        url: "https://www.aljazeera.com/xml/rss/all.xml",
+        category: "geopolitics"
+      },
+      // ----- STOCK MARKET (core) -----
+      {
+        name: "BBC Business",
+        url: "https://feeds.bbci.co.uk/news/business/rss.xml",
+        category: "markets"
+      },
+      {
+        name: "CNBC Top News",
+        url: "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+        category: "markets"
+      },
+      {
+        name: "MarketWatch",
+        url: "https://feeds.marketwatch.com/marketwatch/topstories/",
+        category: "markets"
+      },
+      {
+        name: "Yahoo Finance",
+        url: "https://finance.yahoo.com/news/rssindex",
+        category: "markets"
+      },
+      // Stock market — macro calendar / filings / corporate actions / Europe / futures
+      {
+        name: "Google News Macro Calendar",
+        url: "https://news.google.com/rss/search?q=CPI+OR+inflation+OR+%22nonfarm+payrolls%22+OR+NFP+OR+GDP+OR+PMI+OR+%22interest+rate%22&hl=en-US&gl=US&ceid=US:en",
+        category: "macro"
+      },
+      {
+        name: "Google News Earnings Guidance",
+        url: "https://news.google.com/rss/search?q=earnings+OR+guidance+OR+%22quarterly+results%22+OR+%22EPS%22&hl=en-US&gl=US&ceid=US:en",
+        category: "markets"
+      },
+      {
+        name: "Google News M&A IPO",
+        url: "https://news.google.com/rss/search?q=IPO+OR+%22mergers+and+acquisitions%22+OR+takeover+OR+%22deal+to+buy%22&hl=en-US&gl=US&ceid=US:en",
+        category: "markets"
+      },
+      {
+        name: "Google News Corporate Actions",
+        url: "https://news.google.com/rss/search?q=%22share+buyback%22+OR+dividend+OR+%22stock+split%22+OR+dilution+OR+%22share+repurchase%22&hl=en-US&gl=US&ceid=US:en",
+        category: "markets"
+      },
+      {
+        name: "Google News Europe Stocks",
+        url: "https://news.google.com/rss/search?q=FTSE+OR+DAX+OR+STOXX+OR+%22European+stocks%22+OR+%22Euro+Stoxx%22&hl=en-GB&gl=GB&ceid=GB:en",
+        category: "markets"
+      },
+      {
+        name: "Google News India Markets",
+        url: "https://news.google.com/rss/search?q=Nifty+OR+Sensex+OR+SEBI+OR+%22Indian+stocks%22+OR+RBI&hl=en-IN&gl=IN&ceid=IN:en",
+        category: "markets"
+      },
+      {
+        name: "Google News Analyst Ratings",
+        url: "https://news.google.com/rss/search?q=%22analyst+upgrade%22+OR+%22analyst+downgrade%22+OR+%22price+target%22+OR+%22cuts+rating%22&hl=en-US&gl=US&ceid=US:en",
+        category: "markets"
+      },
+      {
+        name: "SEC Press Releases",
+        url: "https://www.sec.gov/news/pressreleases.rss",
+        category: "regulation"
+      },
+      {
+        name: "Yahoo ES Futures",
+        url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=ES=F&region=US&lang=en-US",
+        category: "markets"
+      },
+      {
+        name: "Yahoo NQ Futures",
+        url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=NQ=F&region=US&lang=en-US",
+        category: "markets"
+      },
+      // Bonds / central banks
+      {
+        name: "Federal Reserve",
+        url: "https://www.federalreserve.gov/feeds/press_all.xml",
+        category: "bonds"
+      },
+      {
+        name: "ECB",
+        url: "https://www.ecb.europa.eu/rss/press.html",
+        category: "bonds"
+      },
+      // ----- CRYPTO -----
+      {
+        name: "CoinDesk",
+        url: "https://www.coindesk.com/arc/outboundfeeds/rss/",
+        category: "crypto"
+      },
+      {
+        name: "Cointelegraph",
+        url: "https://cointelegraph.com/rss",
+        category: "crypto"
+      },
+      {
+        name: "The Block",
+        url: "https://www.theblock.co/rss.xml",
+        category: "crypto"
+      },
+      {
+        name: "Google News Crypto Regulation",
+        url: "https://news.google.com/rss/search?q=crypto+regulation+OR+%22SEC+crypto%22+OR+%22Bitcoin+ETF%22+OR+%22Ethereum+ETF%22+OR+stablecoin&hl=en-US&gl=US&ceid=US:en",
+        category: "crypto"
+      },
+      {
+        name: "Google News Crypto Exchange",
+        url: "https://news.google.com/rss/search?q=Binance+OR+Coinbase+OR+%22crypto+exchange%22+OR+%22crypto+hack%22+OR+%22exchange+hack%22&hl=en-US&gl=US&ceid=US:en",
+        category: "crypto"
+      },
+      {
+        name: "Google News Crypto Macro",
+        url: "https://news.google.com/rss/search?q=Bitcoin+OR+Ethereum+OR+Solana+OR+%22crypto+market%22&hl=en-US&gl=US&ceid=US:en",
+        category: "crypto"
+      },
+      // ----- COMMODITIES (oil, gas, metals) -----
+      {
+        name: "EIA Today in Energy",
+        url: "https://www.eia.gov/rss/todayinenergy.xml",
+        category: "energy"
+      },
+      {
+        name: "OilPrice",
+        url: "https://oilprice.com/rss/main",
+        category: "energy"
+      },
+      {
+        name: "Google News OPEC Oil",
+        url: "https://news.google.com/rss/search?q=OPEC+OR+Brent+OR+WTI+OR+%22crude+oil%22+OR+%22oil+prices%22&hl=en-US&gl=US&ceid=US:en",
+        category: "energy"
+      },
+      {
+        name: "Google News Natural Gas LNG",
+        url: "https://news.google.com/rss/search?q=%22natural+gas%22+OR+LNG+OR+%22gas+prices%22+OR+Henry+Hub&hl=en-US&gl=US&ceid=US:en",
+        category: "energy"
+      },
+      {
+        name: "Google News Metals",
+        url: "https://news.google.com/rss/search?q=gold+OR+silver+OR+%22precious+metals%22+OR+copper+OR+%22industrial+metals%22&hl=en-US&gl=US&ceid=US:en",
+        category: "metals"
+      },
+      {
+        name: "Yahoo Gold Futures",
+        url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=GC=F&region=US&lang=en-US",
+        category: "metals"
+      },
+      {
+        name: "Yahoo Silver Futures",
+        url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=SI=F&region=US&lang=en-US",
+        category: "metals"
+      },
+      {
+        name: "Yahoo Natural Gas Futures",
+        url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=NG=F&region=US&lang=en-US",
+        category: "energy"
+      },
+      {
+        name: "Yahoo Copper Futures",
+        url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=HG=F&region=US&lang=en-US",
+        category: "metals"
+      },
+      {
+        name: "Google News Commodities Supply",
+        url: "https://news.google.com/rss/search?q=%22supply+disruption%22+OR+refinery+OR+pipeline+OR+%22strategic+petroleum%22+OR+%22oil+inventory%22&hl=en-US&gl=US&ceid=US:en",
+        category: "energy"
+      }
+    ];
+    module.exports = {
+      NEWS_SOURCES: NEWS_SOURCES2
     };
   }
 });
@@ -820,27 +1008,57 @@ var require_relevance = __commonJS({
       "bitcoin",
       "btc",
       "ethereum",
+      "eth",
+      "solana",
       "crypto",
       "cryptocurrency",
       "stablecoin",
       "defi",
       "blockchain",
-      // Oil & energy
+      "binance",
+      "coinbase",
+      "bitcoin etf",
+      "ethereum etf",
+      "crypto hack",
+      "exchange hack",
+      // Oil & energy / commodities
       "oil",
       "crude",
       "brent",
       "wti",
       "opec",
       "natural gas",
+      "lng",
       "energy",
+      "petroleum",
+      "refinery",
+      "pipeline",
+      "copper",
+      "industrial metals",
       // Gold & metals
       "gold",
       "silver",
       "precious metals",
-      // US markets
+      // US / global stocks
       "s&p",
       "nasdaq",
       "dow",
+      "nyse",
+      "wall street",
+      "earnings",
+      "guidance",
+      "ipo",
+      "merger",
+      "acquisition",
+      "takeover",
+      "buyback",
+      "dividend",
+      "stock split",
+      "price target",
+      "analyst upgrade",
+      "analyst downgrade",
+      "sec",
+      // Macro calendar
       "fed",
       "federal reserve",
       "treasury",
@@ -848,11 +1066,22 @@ var require_relevance = __commonJS({
       "inflation",
       "cpi",
       "jobs",
+      "nonfarm",
+      "payrolls",
+      "nfp",
+      "gdp",
+      "pmi",
+      // Europe stocks
+      "ftse",
+      "dax",
+      "stoxx",
+      "european stocks",
       // Indian markets
       "nifty",
       "sensex",
       "bank nifty",
       "rbi",
+      "sebi",
       "rupee",
       "fii",
       "dii",
@@ -862,6 +1091,7 @@ var require_relevance = __commonJS({
       "shares",
       "equities",
       "bond market",
+      "futures",
       // Geopolitics
       "war",
       "conflict",
@@ -877,10 +1107,8 @@ var require_relevance = __commonJS({
       "taiwan"
     ];
     function isRelevant(article) {
-      const text = article.title.toLowerCase();
-      return relevantKeywords.some(
-        (keyword) => text.includes(keyword)
-      );
+      const text = (article.title || "").toLowerCase();
+      return relevantKeywords.some((keyword) => text.includes(keyword));
     }
     __name(isRelevant, "isRelevant");
     function filterRelevantArticles2(articles) {
@@ -889,7 +1117,8 @@ var require_relevance = __commonJS({
     __name(filterRelevantArticles2, "filterRelevantArticles");
     module.exports = {
       isRelevant,
-      filterRelevantArticles: filterRelevantArticles2
+      filterRelevantArticles: filterRelevantArticles2,
+      relevantKeywords
     };
   }
 });
@@ -1261,42 +1490,84 @@ var require_marketTags = __commonJS({
         "btc",
         "ethereum",
         "eth",
+        "solana",
         "crypto",
         "cryptocurrency",
         "stablecoin",
         "defi",
-        "blockchain"
+        "blockchain",
+        "binance",
+        "coinbase",
+        "bitcoin etf",
+        "ethereum etf"
       ],
       oil: [
         "oil",
         "crude",
         "brent",
         "wti",
-        "opec"
+        "opec",
+        "petroleum"
       ],
       energy: [
         "energy",
         "natural gas",
-        "lng"
+        "lng",
+        "henry hub",
+        "gas prices"
       ],
       gold: [
         "gold",
         "silver",
         "precious metals"
       ],
+      copper: [
+        "copper",
+        "industrial metals",
+        "base metals"
+      ],
       usStocks: [
         "s&p",
         "nasdaq",
         "dow",
         "wall street",
-        "us stocks"
+        "us stocks",
+        "nyse",
+        "earnings",
+        "ipo",
+        "buyback",
+        "stock split",
+        "price target",
+        "analyst upgrade",
+        "analyst downgrade"
+      ],
+      europeStocks: [
+        "ftse",
+        "dax",
+        "stoxx",
+        "euro stoxx",
+        "european stocks",
+        "cac 40"
       ],
       indiaStocks: [
         "nifty",
         "sensex",
         "bank nifty",
         "indian stocks",
-        "rbi"
+        "rbi",
+        "sebi"
+      ],
+      macro: [
+        "cpi",
+        "inflation",
+        "nonfarm",
+        "payrolls",
+        "nfp",
+        "gdp",
+        "pmi",
+        "interest rate",
+        "federal reserve",
+        "fed"
       ],
       forex: [
         "dollar",
@@ -1328,20 +1599,15 @@ var require_marketTags = __commonJS({
       ]
     };
     function detectMarketTags(article) {
-      const title = article.title.toLowerCase();
+      const title = (article.title || "").toLowerCase();
       const tags = [];
       for (const [market, keywords] of Object.entries(marketKeywords)) {
         const matchedKeyword = keywords.find((keyword) => {
-          const pattern = new RegExp(
-            `\\b${keyword}\\b`,
-            "i"
-          );
+          const pattern = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
           return pattern.test(title);
         });
         if (matchedKeyword) {
-          console.log(
-            `Market match: ${market} \u2190 "${matchedKeyword}"`
-          );
+          console.log(`Market match: ${market} \u2190 "${matchedKeyword}"`);
           tags.push(market);
         }
       }
@@ -1349,12 +1615,35 @@ var require_marketTags = __commonJS({
         if (article.category === "crypto") {
           tags.push("crypto");
         }
-        if (article.category === "markets") {
+        if (article.category === "markets" || article.category === "macro") {
+          tags.push("usStocks");
           tags.push("globalMarkets");
         }
         if (article.category === "geopolitics") {
           tags.push("geopolitics");
         }
+        if (article.category === "energy") {
+          tags.push("oil");
+          tags.push("energy");
+        }
+        if (article.category === "metals") {
+          tags.push("gold");
+        }
+        if (article.category === "bonds" || article.category === "regulation") {
+          tags.push("bonds");
+          tags.push("usStocks");
+        }
+      }
+      if (tags.some(
+        (tag) => ["usStocks", "indiaStocks", "europeStocks", "macro", "bonds"].includes(tag)
+      )) {
+        tags.push("stockMarket");
+      }
+      if (tags.includes("crypto")) {
+        tags.push("cryptoMarket");
+      }
+      if (tags.some((tag) => ["oil", "energy", "gold", "copper"].includes(tag))) {
+        tags.push("commoditiesMarket");
       }
       return [...new Set(tags)];
     }
@@ -1371,7 +1660,8 @@ var require_marketTags = __commonJS({
     __name(addMarketTags2, "addMarketTags");
     module.exports = {
       detectMarketTags,
-      addMarketTags: addMarketTags2
+      addMarketTags: addMarketTags2,
+      marketKeywords
     };
   }
 });
@@ -1381,49 +1671,25 @@ var require_assetMapping = __commonJS({
   "src/news/assetMapping.js"(exports, module) {
     init_modules_watch_stub();
     var marketAssets = {
-      crypto: [
-        "BTC",
-        "ETH"
-      ],
-      oil: [
-        "BRENT",
-        "WTI"
-      ],
-      energy: [
-        "NATURAL_GAS",
-        "ENERGY_STOCKS"
-      ],
-      gold: [
-        "GOLD",
-        "SILVER"
-      ],
-      usStocks: [
-        "S&P_500",
-        "NASDAQ",
-        "DOW"
-      ],
-      indiaStocks: [
-        "NIFTY_50",
-        "BANK_NIFTY",
-        "SENSEX"
-      ],
-      forex: [
-        "USD",
-        "EUR",
-        "JPY",
-        "INR"
-      ],
-      bonds: [
-        "US_10Y",
-        "US_2Y"
-      ],
-      geopolitics: [
-        "GLOBAL_MARKETS"
-      ]
+      crypto: ["BTC", "ETH", "SOL"],
+      oil: ["BRENT", "WTI"],
+      energy: ["NATURAL_GAS", "ENERGY_STOCKS"],
+      gold: ["GOLD", "SILVER"],
+      copper: ["COPPER"],
+      usStocks: ["S&P_500", "NASDAQ", "DOW", "ES_FUTURES"],
+      europeStocks: ["FTSE_100", "DAX", "EURO_STOXX_50"],
+      indiaStocks: ["NIFTY_50", "BANK_NIFTY", "SENSEX"],
+      macro: ["S&P_500", "NASDAQ", "US_10Y"],
+      forex: ["USD", "EUR", "JPY", "INR"],
+      bonds: ["US_10Y", "US_2Y"],
+      geopolitics: ["GLOBAL_MARKETS"],
+      stockMarket: ["S&P_500", "NASDAQ", "DOW"],
+      cryptoMarket: ["BTC", "ETH"],
+      commoditiesMarket: ["BRENT", "WTI", "GOLD", "SILVER", "NATURAL_GAS", "COPPER"]
     };
     function mapAssets(marketTags) {
       const assets = [];
-      for (const tag of marketTags) {
+      for (const tag of marketTags || []) {
         const mappedAssets = marketAssets[tag];
         if (mappedAssets) {
           assets.push(...mappedAssets);
@@ -1444,7 +1710,8 @@ var require_assetMapping = __commonJS({
     __name(addAssetMapping2, "addAssetMapping");
     module.exports = {
       mapAssets,
-      addAssetMapping: addAssetMapping2
+      addAssetMapping: addAssetMapping2,
+      marketAssets
     };
   }
 });
@@ -1581,20 +1848,26 @@ var require_impactExplanation = __commonJS({
     function generateImpactExplanation(article) {
       const { marketTags, affectedAssets, direction } = article;
       let explanation = "";
-      if (marketTags.includes("crypto")) {
+      if (marketTags.includes("crypto") || marketTags.includes("cryptoMarket")) {
         explanation = "The event is relevant to the crypto market and may affect sentiment around crypto infrastructure and institutional activity.";
       }
-      if (marketTags.includes("oil")) {
-        explanation = "The event may affect oil supply, demand, pricing, or energy-market sentiment.";
+      if (marketTags.includes("oil") || marketTags.includes("energy")) {
+        explanation = "The event may affect oil or energy supply, demand, pricing, or energy-market sentiment.";
       }
-      if (marketTags.includes("gold")) {
-        explanation = "The event may influence safe-haven demand, inflation expectations, or precious-metals sentiment.";
+      if (marketTags.includes("gold") || marketTags.includes("copper")) {
+        explanation = "The event may influence metals demand, inflation expectations, or industrial/precious-metals sentiment.";
       }
-      if (marketTags.includes("usStocks")) {
-        explanation = "The event may affect U.S. equities through earnings, economic expectations, interest rates, or investor sentiment.";
+      if (marketTags.includes("usStocks") || marketTags.includes("stockMarket")) {
+        explanation = "The event may affect equities through earnings, corporate actions, economic expectations, interest rates, or investor sentiment.";
+      }
+      if (marketTags.includes("europeStocks")) {
+        explanation = "The event may affect European equities through earnings, policy, growth expectations, or regional risk sentiment.";
       }
       if (marketTags.includes("indiaStocks")) {
         explanation = "The event may affect Indian equities through earnings, economic expectations, foreign flows, or domestic sentiment.";
+      }
+      if (marketTags.includes("macro")) {
+        explanation = "The event is a macro data or policy signal that can reprice equities, bonds, and risk appetite.";
       }
       if (marketTags.includes("geopolitics")) {
         explanation = "The event may affect markets through geopolitical risk, trade, supply chains, energy prices, and investor risk appetite.";
@@ -1709,7 +1982,11 @@ var require_eventType = __commonJS({
         "cpi",
         "jobs",
         "unemployment",
+        "nonfarm",
+        "payrolls",
+        "nfp",
         "gdp",
+        "pmi",
         "recession",
         "treasury"
       ],
@@ -1717,6 +1994,7 @@ var require_eventType = __commonJS({
         "regulation",
         "regulator",
         "sec",
+        "sebi",
         "ban",
         "banned",
         "sanctions",
@@ -1734,7 +2012,20 @@ var require_eventType = __commonJS({
         "revenue",
         "profit",
         "quarterly results",
-        "guidance"
+        "guidance",
+        "eps"
+      ],
+      CORPORATE_ACTION: [
+        "buyback",
+        "share repurchase",
+        "dividend",
+        "stock split",
+        "dilution",
+        "share issuance",
+        "ipo",
+        "merger",
+        "acquisition",
+        "takeover"
       ],
       SUPPLY_SHOCK: [
         "production cut",
@@ -1744,7 +2035,8 @@ var require_eventType = __commonJS({
         "pipeline",
         "refinery",
         "oil facility",
-        "opec"
+        "opec",
+        "inventory"
       ],
       LEADERSHIP_CHANGE: [
         "ceo steps down",
@@ -1757,7 +2049,7 @@ var require_eventType = __commonJS({
       ]
     };
     function detectEventTypes(article) {
-      const title = article.title.toLowerCase();
+      const title = (article.title || "").toLowerCase();
       const eventTypes = [];
       for (const [eventType, keywords] of Object.entries(eventKeywords)) {
         for (const keyword of keywords) {
@@ -1785,7 +2077,8 @@ var require_eventType = __commonJS({
     __name(addEventType2, "addEventType");
     module.exports = {
       detectEventTypes,
-      addEventType: addEventType2
+      addEventType: addEventType2,
+      eventKeywords
     };
   }
 });
@@ -2135,20 +2428,20 @@ var require_postBuilder = __commonJS({
       message += `${getPostTypeHeader(postType)}
 
 `;
-      message += `<b>${escapeHtml(event.title)}</b>
+      message += `<b>${escapeHtml2(event.title)}</b>
 
 `;
       const whyItMatters = event.whyItMatters || buildFallbackWhyItMatters(event);
       if (whyItMatters) {
         message += `\u{1F4A1} <b>Why this matters</b>
 `;
-        message += `${escapeHtml(whyItMatters)}
+        message += `${escapeHtml2(whyItMatters)}
 
 `;
       }
       message += `\u{1F3AF} <b>Midnight Society take</b>
 `;
-      message += `${escapeHtml(
+      message += `${escapeHtml2(
         describeMarketTake(
           direction,
           magnitude,
@@ -2159,25 +2452,25 @@ var require_postBuilder = __commonJS({
 `;
       message += `\u{1F4CC} <b>At a glance</b>
 `;
-      message += `\u2022 Bias: <b>${escapeHtml(
+      message += `\u2022 Bias: <b>${escapeHtml2(
         humanDirection(direction)
       )}</b>
 `;
-      message += `\u2022 Strength: <b>${escapeHtml(
+      message += `\u2022 Strength: <b>${escapeHtml2(
         humanMagnitude(magnitude)
       )}</b>
 `;
-      message += `\u2022 Window: <b>${escapeHtml(
+      message += `\u2022 Window: <b>${escapeHtml2(
         humanTimeframe(timeframe)
       )}</b>
 `;
-      message += `\u2022 Confidence: <b>${escapeHtml(
+      message += `\u2022 Confidence: <b>${escapeHtml2(
         humanConfidence(confidence)
       )}</b>
 `;
       const assets = event.affectedAssets || [];
       if (assets.length) {
-        message += `\u2022 Watch: <b>${escapeHtml(
+        message += `\u2022 Watch: <b>${escapeHtml2(
           assets.join(", ")
         )}</b>
 `;
@@ -2227,28 +2520,28 @@ var require_postBuilder = __commonJS({
       let message = "";
       message += `\u{1F4CA} <b>Market check</b>
 `;
-      message += `Result: <b>${escapeHtml(
+      message += `Result: <b>${escapeHtml2(
         report.overall
       )}</b>
 `;
-      message += `Expected: <b>${escapeHtml(
+      message += `Expected: <b>${escapeHtml2(
         report.expectedDirection
       )}</b>
 `;
       if (report.confirmingAssets?.length) {
-        message += `\u2705 Confirmed: ${escapeHtml(
+        message += `\u2705 Confirmed: ${escapeHtml2(
           report.confirmingAssets.join(", ")
         )}
 `;
       }
       if (report.divergingAssets?.length) {
-        message += `\u26A0\uFE0F Diverging: ${escapeHtml(
+        message += `\u26A0\uFE0F Diverging: ${escapeHtml2(
           report.divergingAssets.join(", ")
         )}
 `;
       }
       if (report.neutralAssets?.length) {
-        message += `\u2796 Quiet: ${escapeHtml(
+        message += `\u2796 Quiet: ${escapeHtml2(
           report.neutralAssets.join(", ")
         )}
 `;
@@ -2307,13 +2600,13 @@ var require_postBuilder = __commonJS({
       return map[confidence] || confidence;
     }
     __name(humanConfidence, "humanConfidence");
-    function escapeHtml(text) {
+    function escapeHtml2(text) {
       if (text === void 0 || text === null) {
         return "";
       }
       return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
-    __name(escapeHtml, "escapeHtml");
+    __name(escapeHtml2, "escapeHtml");
     module.exports = {
       buildTelegramPost,
       buildReactionSection
@@ -2466,10 +2759,10 @@ var require_performanceCalculator = __commonJS({
   }
 });
 
-// .wrangler/tmp/bundle-l1XdLl/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-yTptfc/middleware-loader.entry.ts
 init_modules_watch_stub();
 
-// .wrangler/tmp/bundle-l1XdLl/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-yTptfc/middleware-insertion-facade.js
 init_modules_watch_stub();
 
 // src/cloudflare/worker.js
@@ -2539,7 +2832,7 @@ function getConfig(env) {
       getEnvString(env, "AI_PROVIDER_MAX_RETRIES", "1")
     ),
     // Conservative Worker bounds
-    maxRssSourcesPerRun: Number(getEnvString(env, "CF_MAX_RSS_SOURCES", "8")),
+    maxRssSourcesPerRun: Number(getEnvString(env, "CF_MAX_RSS_SOURCES", "24")),
     maxNewEventsPerRun: Number(getEnvString(env, "CF_MAX_NEW_EVENTS", "5")),
     maxAiCallsPerRun: Number(getEnvString(env, "CF_MAX_AI_CALLS", "3")),
     maxMarketEventsPerRun: Number(getEnvString(env, "CF_MAX_MARKET_EVENTS", "10")),
@@ -3712,89 +4005,18 @@ init_modules_watch_stub();
 
 // src/cloudflare/news/rssSources.js
 init_modules_watch_stub();
-var NEWS_SOURCES = [
-  // Geopolitics
-  {
-    name: "BBC World",
-    url: "https://feeds.bbci.co.uk/news/world/rss.xml",
-    category: "geopolitics"
-  },
-  {
-    name: "Al Jazeera",
-    url: "https://www.aljazeera.com/xml/rss/all.xml",
-    category: "geopolitics"
-  },
-  // World stocks / markets
-  {
-    name: "BBC Business",
-    url: "https://feeds.bbci.co.uk/news/business/rss.xml",
-    category: "markets"
-  },
-  {
-    name: "CNBC Top News",
-    url: "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-    category: "markets"
-  },
-  {
-    name: "MarketWatch",
-    url: "https://feeds.marketwatch.com/marketwatch/topstories/",
-    category: "markets"
-  },
-  {
-    name: "Yahoo Finance",
-    url: "https://finance.yahoo.com/news/rssindex",
-    category: "markets"
-  },
-  // Bonds / central banks (official)
-  {
-    name: "Federal Reserve",
-    url: "https://www.federalreserve.gov/feeds/press_all.xml",
-    category: "bonds"
-  },
-  {
-    name: "ECB",
-    url: "https://www.ecb.europa.eu/rss/press.html",
-    category: "bonds"
-  },
-  // Crypto
-  {
-    name: "CoinDesk",
-    url: "https://www.coindesk.com/arc/outboundfeeds/rss/",
-    category: "crypto"
-  },
-  {
-    name: "Cointelegraph",
-    url: "https://cointelegraph.com/rss",
-    category: "crypto"
-  },
-  {
-    name: "The Block",
-    url: "https://www.theblock.co/rss.xml",
-    category: "crypto"
-  },
-  // Power & energy
-  {
-    name: "EIA Today in Energy",
-    url: "https://www.eia.gov/rss/todayinenergy.xml",
-    category: "energy"
-  },
-  {
-    name: "OilPrice",
-    url: "https://oilprice.com/rss/main",
-    category: "energy"
-  },
-  // Precious metals
-  {
-    name: "Google News Metals",
-    url: "https://news.google.com/rss/search?q=gold+OR+silver+OR+%22precious+metals%22&hl=en-US&gl=US&ceid=US:en",
-    category: "metals"
-  },
-  {
-    name: "Yahoo Gold Futures",
-    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=GC=F&region=US&lang=en-US",
-    category: "metals"
+var sourcesMod = __toESM(require_rssSources(), 1);
+function pickExport3(mod, name) {
+  if (mod && mod[name] !== void 0) {
+    return mod[name];
   }
-];
+  if (mod?.default && mod.default[name] !== void 0) {
+    return mod.default[name];
+  }
+  throw new Error(`Missing export ${name}`);
+}
+__name(pickExport3, "pickExport");
+var NEWS_SOURCES = pickExport3(sourcesMod, "NEWS_SOURCES");
 
 // src/cloudflare/news/safeFetchRss.js
 init_modules_watch_stub();
@@ -4012,7 +4234,7 @@ var timeframeMod = __toESM(require_timeframe(), 1);
 var eventTypeMod = __toESM(require_eventType(), 1);
 var evidenceConfidenceMod = __toESM(require_evidenceConfidence(), 1);
 var priorityMod = __toESM(require_priority(), 1);
-function pickExport3(mod, name) {
+function pickExport4(mod, name) {
   if (mod && typeof mod[name] === "function") {
     return mod[name];
   }
@@ -4026,35 +4248,35 @@ function pickExport3(mod, name) {
     `Unable to resolve export "${name}" from news transform module`
   );
 }
-__name(pickExport3, "pickExport");
-var deduplicateArticles = pickExport3(dedupeMod, "deduplicateArticles");
-var filterRelevantArticles = pickExport3(
+__name(pickExport4, "pickExport");
+var deduplicateArticles = pickExport4(dedupeMod, "deduplicateArticles");
+var filterRelevantArticles = pickExport4(
   relevanceMod,
   "filterRelevantArticles"
 );
-var clusterArticles = pickExport3(clusterMod, "clusterArticles");
-var addNovelty = pickExport3(noveltyMod, "addNovelty");
-var createCanonicalEvent = pickExport3(
+var clusterArticles = pickExport4(clusterMod, "clusterArticles");
+var addNovelty = pickExport4(noveltyMod, "addNovelty");
+var createCanonicalEvent = pickExport4(
   canonicalMod,
   "createCanonicalEvent"
 );
-var addSourceQuality = pickExport3(sourceQualityMod, "addSourceQuality");
-var addImpactScore = pickExport3(impactScoreMod, "addImpactScore");
-var addMarketTags = pickExport3(marketTagsMod, "addMarketTags");
-var addAssetMapping = pickExport3(assetMappingMod, "addAssetMapping");
-var addDirection = pickExport3(directionMod, "addDirection");
-var addConfidence = pickExport3(confidenceMod, "addConfidence");
-var addImpactExplanation = pickExport3(
+var addSourceQuality = pickExport4(sourceQualityMod, "addSourceQuality");
+var addImpactScore = pickExport4(impactScoreMod, "addImpactScore");
+var addMarketTags = pickExport4(marketTagsMod, "addMarketTags");
+var addAssetMapping = pickExport4(assetMappingMod, "addAssetMapping");
+var addDirection = pickExport4(directionMod, "addDirection");
+var addConfidence = pickExport4(confidenceMod, "addConfidence");
+var addImpactExplanation = pickExport4(
   impactExplanationMod,
   "addImpactExplanation"
 );
-var addTimeframe = pickExport3(timeframeMod, "addTimeframe");
-var addEventType = pickExport3(eventTypeMod, "addEventType");
-var addEvidenceConfidence = pickExport3(
+var addTimeframe = pickExport4(timeframeMod, "addTimeframe");
+var addEventType = pickExport4(eventTypeMod, "addEventType");
+var addEvidenceConfidence = pickExport4(
   evidenceConfidenceMod,
   "addEvidenceConfidence"
 );
-var addPriority = pickExport3(priorityMod, "addPriority");
+var addPriority = pickExport4(priorityMod, "addPriority");
 function processNews(articles) {
   const uniqueArticles = deduplicateArticles(articles);
   const relevantArticles = filterRelevantArticles(uniqueArticles);
@@ -4988,7 +5210,7 @@ __name(routeAI, "routeAI");
 
 // src/cloudflare/jobs/analyzeEvent.js
 init_eventRepository();
-function pickExport4(mod, name) {
+function pickExport5(mod, name) {
   if (mod && typeof mod[name] === "function") {
     return mod[name];
   }
@@ -4997,9 +5219,9 @@ function pickExport4(mod, name) {
   }
   throw new Error(`Missing export ${name}`);
 }
-__name(pickExport4, "pickExport");
-var checkEvidence = pickExport4(evidenceMod, "checkEvidence");
-var buildFinalAnalysis = pickExport4(finalMod, "buildFinalAnalysis");
+__name(pickExport5, "pickExport");
+var checkEvidence = pickExport5(evidenceMod, "checkEvidence");
+var buildFinalAnalysis = pickExport5(finalMod, "buildFinalAnalysis");
 async function savePredictionIfNeeded(env, eventId, finalAnalysis) {
   if (await predictionExists(env, eventId)) {
     return { saved: false, reason: "ALREADY_EXISTS" };
@@ -5046,7 +5268,274 @@ __name(analyzeEvent, "analyzeEvent");
 
 // src/cloudflare/jobs/publishJob.js
 init_modules_watch_stub();
-function pickExport5(mod, name) {
+
+// src/cloudflare/telegram/preferenceDelivery.js
+init_modules_watch_stub();
+
+// src/cloudflare/d1/subscriberRepository.js
+init_modules_watch_stub();
+init_client();
+var PREFERENCES = {
+  STOCKS: "stocks",
+  CRYPTO: "crypto",
+  COMMODITIES: "commodities",
+  ALL: "all"
+};
+function isValidPreference(value) {
+  return Object.values(PREFERENCES).includes(String(value || "").toLowerCase());
+}
+__name(isValidPreference, "isValidPreference");
+async function upsertSubscriber(env, user) {
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const existing = await getSubscriber(env, user.telegramUserId);
+  if (existing) {
+    await dbRun(
+      env,
+      `
+        UPDATE subscriber_preferences
+        SET
+          username = ?,
+          first_name = ?,
+          updated_at = ?
+        WHERE telegram_user_id = ?
+      `,
+      user.username || null,
+      user.firstName || null,
+      now,
+      String(user.telegramUserId)
+    );
+    return getSubscriber(env, user.telegramUserId);
+  }
+  await dbRun(
+    env,
+    `
+      INSERT INTO subscriber_preferences (
+        telegram_user_id,
+        username,
+        first_name,
+        preference,
+        welcome_sent_at,
+        preference_set_at,
+        updated_at,
+        created_at
+      )
+      VALUES (?, ?, ?, 'all', NULL, NULL, ?, ?)
+    `,
+    String(user.telegramUserId),
+    user.username || null,
+    user.firstName || null,
+    now,
+    now
+  );
+  return getSubscriber(env, user.telegramUserId);
+}
+__name(upsertSubscriber, "upsertSubscriber");
+async function getSubscriber(env, telegramUserId) {
+  return dbGet(
+    env,
+    `
+      SELECT *
+      FROM subscriber_preferences
+      WHERE telegram_user_id = ?
+      LIMIT 1
+    `,
+    String(telegramUserId)
+  );
+}
+__name(getSubscriber, "getSubscriber");
+async function markWelcomeSent(env, telegramUserId) {
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  await dbRun(
+    env,
+    `
+      UPDATE subscriber_preferences
+      SET welcome_sent_at = ?, updated_at = ?
+      WHERE telegram_user_id = ?
+    `,
+    now,
+    now,
+    String(telegramUserId)
+  );
+}
+__name(markWelcomeSent, "markWelcomeSent");
+async function setPreference(env, telegramUserId, preference) {
+  if (!isValidPreference(preference)) {
+    throw new Error("Invalid market preference");
+  }
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const normalized = String(preference).toLowerCase();
+  await upsertSubscriber(env, { telegramUserId });
+  await dbRun(
+    env,
+    `
+      UPDATE subscriber_preferences
+      SET
+        preference = ?,
+        preference_set_at = ?,
+        updated_at = ?
+      WHERE telegram_user_id = ?
+    `,
+    normalized,
+    now,
+    now,
+    String(telegramUserId)
+  );
+  return getSubscriber(env, telegramUserId);
+}
+__name(setPreference, "setPreference");
+async function listAllSubscribers(env, options = {}) {
+  const limit = Number(options.limit || 200);
+  return dbAll(
+    env,
+    `
+      SELECT *
+      FROM subscriber_preferences
+      WHERE preference_set_at IS NOT NULL
+      ORDER BY updated_at DESC
+      LIMIT ?
+    `,
+    limit
+  );
+}
+__name(listAllSubscribers, "listAllSubscribers");
+
+// src/cloudflare/telegram/welcome.js
+init_modules_watch_stub();
+function buildWelcomeMessage(firstName) {
+  const name = firstName ? String(firstName).trim() : "";
+  const greeting = name ? `Welcome, ${escapeHtml(name)}.` : "Welcome.";
+  return `${greeting}
+
+You didn\u2019t just join another feed.
+You stepped into a room where only the moves that matter make it through.
+
+<b>Midnight Society</b> is built for people who want signal over noise \u2014 the kind of clarity that makes you feel ahead, not overwhelmed.
+
+You\u2019re in the right place.`;
+}
+__name(buildWelcomeMessage, "buildWelcomeMessage");
+function buildPreferencePromptMessage() {
+  return `One last step \u2014 make this yours.
+
+Which market should we watch for you?
+You\u2019ll only get major alerts for what you choose.`;
+}
+__name(buildPreferencePromptMessage, "buildPreferencePromptMessage");
+function buildPreferenceSavedMessage(preference) {
+  const labels = {
+    [PREFERENCES.STOCKS]: "Stock market",
+    [PREFERENCES.CRYPTO]: "Crypto",
+    [PREFERENCES.COMMODITIES]: "Commodities",
+    [PREFERENCES.ALL]: "All markets"
+  };
+  const label = labels[preference] || preference;
+  return `Locked in: <b>${escapeHtml(label)}</b>.
+
+From here, Midnight Society will focus your alerts on that lane.
+You can change this anytime with /markets.`;
+}
+__name(buildPreferenceSavedMessage, "buildPreferenceSavedMessage");
+function buildMarketPreferenceKeyboard() {
+  return {
+    inline_keyboard: [
+      [
+        { text: "\u{1F4C8} Stock market", callback_data: "pref:stocks" },
+        { text: "\u20BF Crypto", callback_data: "pref:crypto" }
+      ],
+      [
+        { text: "\u{1F6E2} Commodities", callback_data: "pref:commodities" },
+        { text: "\u{1F310} All", callback_data: "pref:all" }
+      ]
+    ]
+  };
+}
+__name(buildMarketPreferenceKeyboard, "buildMarketPreferenceKeyboard");
+function getEventMarketBuckets(event) {
+  const tags = (event?.marketTags || []).map(
+    (tag) => String(tag).toLowerCase()
+  );
+  const buckets = /* @__PURE__ */ new Set();
+  if (tags.some(
+    (tag) => [
+      "stockmarket",
+      "usstocks",
+      "indiastocks",
+      "europestocks",
+      "macro",
+      "bonds",
+      "globalmarkets"
+    ].includes(tag)
+  )) {
+    buckets.add(PREFERENCES.STOCKS);
+  }
+  if (tags.some((tag) => ["crypto", "cryptomarket"].includes(tag))) {
+    buckets.add(PREFERENCES.CRYPTO);
+  }
+  if (tags.some(
+    (tag) => ["oil", "energy", "gold", "copper", "commoditiesmarket"].includes(tag)
+  )) {
+    buckets.add(PREFERENCES.COMMODITIES);
+  }
+  if (buckets.size === 0) {
+    const title = String(event?.title || "").toLowerCase();
+    if (/bitcoin|ethereum|crypto|btc|eth|solana|stablecoin/.test(title)) {
+      buckets.add(PREFERENCES.CRYPTO);
+    } else if (/oil|brent|wti|opec|gold|silver|copper|natural gas|lng/.test(title)) {
+      buckets.add(PREFERENCES.COMMODITIES);
+    } else {
+      buckets.add(PREFERENCES.STOCKS);
+    }
+  }
+  return [...buckets];
+}
+__name(getEventMarketBuckets, "getEventMarketBuckets");
+function preferenceMatchesEvent(preference, event) {
+  const pref = String(preference || PREFERENCES.ALL).toLowerCase();
+  if (pref === PREFERENCES.ALL) {
+    return true;
+  }
+  const buckets = getEventMarketBuckets(event);
+  return buckets.includes(pref);
+}
+__name(preferenceMatchesEvent, "preferenceMatchesEvent");
+function escapeHtml(text) {
+  return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+__name(escapeHtml, "escapeHtml");
+
+// src/cloudflare/telegram/preferenceDelivery.js
+async function deliverToMatchingSubscribers(env, event, message, options = {}) {
+  const subscribers = await listAllSubscribers(env, {
+    limit: options.limit || 200
+  });
+  let sent = 0;
+  let skipped = 0;
+  let failed = 0;
+  for (const subscriber of subscribers) {
+    if (!preferenceMatchesEvent(subscriber.preference, event)) {
+      skipped += 1;
+      continue;
+    }
+    try {
+      await publishTelegramMessage(env, message, {
+        chatId: subscriber.telegram_user_id
+      });
+      sent += 1;
+    } catch (error) {
+      failed += 1;
+      logWarn("SUBSCRIBER_DM_FAILED", {
+        telegramUserId: subscriber.telegram_user_id,
+        reason: String(error.message || error)
+      });
+    }
+  }
+  logInfo("SUBSCRIBER_DM_DELIVERY", { sent, skipped, failed });
+  return { sent, skipped, failed };
+}
+__name(deliverToMatchingSubscribers, "deliverToMatchingSubscribers");
+
+// src/cloudflare/jobs/publishJob.js
+function pickExport6(mod, name) {
   if (mod && typeof mod[name] === "function") {
     return mod[name];
   }
@@ -5055,15 +5544,15 @@ function pickExport5(mod, name) {
   }
   return null;
 }
-__name(pickExport5, "pickExport");
+__name(pickExport6, "pickExport");
 async function loadBuilders() {
   const decision = await Promise.resolve().then(() => __toESM(require_publishDecision(), 1));
   const eligibility = await Promise.resolve().then(() => __toESM(require_publishEligibility(), 1));
   const postBuilder = await Promise.resolve().then(() => __toESM(require_postBuilder(), 1));
   return {
-    shouldPublish: pickExport5(decision, "shouldPublish"),
-    isFreshEvent: pickExport5(eligibility, "isFreshEvent"),
-    buildTelegramPost: pickExport5(postBuilder, "buildTelegramPost")
+    shouldPublish: pickExport6(decision, "shouldPublish"),
+    isFreshEvent: pickExport6(eligibility, "isFreshEvent"),
+    buildTelegramPost: pickExport6(postBuilder, "buildTelegramPost")
   };
 }
 __name(loadBuilders, "loadBuilders");
@@ -5123,11 +5612,24 @@ async function publishEvent(env, event, options = {}) {
   const result = await publishAndRecordPost(env, eventId, message, {
     chatId: options.chatId
   });
+  let dmResult = { sent: 0, skipped: 0, failed: 0 };
+  try {
+    dmResult = await deliverToMatchingSubscribers(env, event, message);
+  } catch (error) {
+    logWarn("PREFERENCE_DM_BATCH_FAILED", {
+      eventId,
+      reason: String(error.message || error)
+    });
+  }
   logInfo("TELEGRAM_SUCCESS", {
     eventId,
-    messageId: result.telegramMessageId
+    messageId: result.telegramMessageId,
+    dmSent: dmResult.sent
   });
-  return result;
+  return {
+    ...result,
+    dmResult
+  };
 }
 __name(publishEvent, "publishEvent");
 async function runPublishJob(env, options = {}) {
@@ -5311,7 +5813,7 @@ async function getPerformanceRows(env, options = {}) {
 __name(getPerformanceRows, "getPerformanceRows");
 
 // src/cloudflare/jobs/performanceJob.js
-function pickExport6(mod, name) {
+function pickExport7(mod, name) {
   if (mod && typeof mod[name] === "function") {
     return mod[name];
   }
@@ -5320,21 +5822,21 @@ function pickExport6(mod, name) {
   }
   throw new Error(`Missing export ${name}`);
 }
-__name(pickExport6, "pickExport");
+__name(pickExport7, "pickExport");
 async function runPerformanceJob(env) {
   logInfo("JOB_START", { job: "performance" });
   try {
     const rows = await getPerformanceRows(env, { limit: 500 });
-    const calculatePerformance = pickExport6(calcMod, "calculatePerformance");
-    const calculatePerformanceByGroup = pickExport6(
+    const calculatePerformance = pickExport7(calcMod, "calculatePerformance");
+    const calculatePerformanceByGroup = pickExport7(
       calcMod,
       "calculatePerformanceByGroup"
     );
-    const calculatePerformanceByAssetAndHorizon = pickExport6(
+    const calculatePerformanceByAssetAndHorizon = pickExport7(
       calcMod,
       "calculatePerformanceByAssetAndHorizon"
     );
-    const calculateRollingPerformance = pickExport6(
+    const calculateRollingPerformance = pickExport7(
       calcMod,
       "calculateRollingPerformance"
     );
@@ -5390,13 +5892,265 @@ async function getTelegramMe(env, options = {}) {
 }
 __name(getTelegramMe, "getTelegramMe");
 
+// src/cloudflare/telegram/webhookHandler.js
+init_modules_watch_stub();
+
+// src/cloudflare/telegram/api.js
+init_modules_watch_stub();
+function requireToken(env) {
+  const token = env?.TELEGRAM_BOT_TOKEN;
+  if (!token || !String(token).trim()) {
+    throw new Error("TELEGRAM_BOT_TOKEN is not configured");
+  }
+  return String(token);
+}
+__name(requireToken, "requireToken");
+async function callTelegramApi(env, method, payload = {}, options = {}) {
+  const token = requireToken(env);
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
+  const url = `https://api.telegram.org/bot${token}/${method}`;
+  const response = await fetchImpl(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+  const rawText = await response.text();
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch (_error) {
+    throw new Error(`Telegram API HTTP ${response.status}: invalid JSON`);
+  }
+  if (!response.ok || data.ok !== true) {
+    const description = data?.description || "Telegram request failed";
+    const error = new Error(`Telegram API HTTP ${response.status}: ${description}`);
+    error.status = response.status;
+    error.telegramDescription = description;
+    throw error;
+  }
+  return data.result;
+}
+__name(callTelegramApi, "callTelegramApi");
+
+// src/cloudflare/telegram/webhookHandler.js
+function isJoinToMember(oldStatus, newStatus) {
+  const previouslyNotMember = ["left", "kicked", "restricted"].includes(
+    String(oldStatus || "")
+  ) || !oldStatus;
+  const nowMember = ["member", "administrator", "creator", "restricted"].includes(
+    String(newStatus || "")
+  );
+  return previouslyNotMember && nowMember && newStatus !== "left";
+}
+__name(isJoinToMember, "isJoinToMember");
+async function sendWelcomeFlow(env, user, options = {}) {
+  const telegramUserId = user.id;
+  await upsertSubscriber(env, {
+    telegramUserId,
+    username: user.username,
+    firstName: user.first_name
+  });
+  const existing = await getSubscriber(env, telegramUserId);
+  const force = Boolean(options.force);
+  if (existing?.welcome_sent_at && !force) {
+    if (!existing.preference_set_at) {
+      await callTelegramApi(env, "sendMessage", {
+        chat_id: telegramUserId,
+        text: buildPreferencePromptMessage(),
+        parse_mode: "HTML",
+        reply_markup: buildMarketPreferenceKeyboard(),
+        link_preview_options: { is_disabled: true }
+      });
+    }
+    return { status: "ALREADY_WELCOMED" };
+  }
+  await callTelegramApi(env, "sendMessage", {
+    chat_id: telegramUserId,
+    text: buildWelcomeMessage(user.first_name),
+    parse_mode: "HTML",
+    link_preview_options: { is_disabled: true }
+  });
+  await callTelegramApi(env, "sendMessage", {
+    chat_id: telegramUserId,
+    text: buildPreferencePromptMessage(),
+    parse_mode: "HTML",
+    reply_markup: buildMarketPreferenceKeyboard(),
+    link_preview_options: { is_disabled: true }
+  });
+  await markWelcomeSent(env, telegramUserId);
+  logInfo("WELCOME_SENT", { telegramUserId: String(telegramUserId) });
+  return { status: "WELCOME_SENT" };
+}
+__name(sendWelcomeFlow, "sendWelcomeFlow");
+async function handleStartCommand(env, message) {
+  const user = message.from;
+  if (!user?.id) {
+    return { status: "IGNORED" };
+  }
+  try {
+    return await sendWelcomeFlow(env, user, { force: true });
+  } catch (error) {
+    logWarn("WELCOME_SEND_FAILED", {
+      telegramUserId: String(user.id),
+      reason: String(error.message || error)
+    });
+    return { status: "FAILED", reason: String(error.message || error) };
+  }
+}
+__name(handleStartCommand, "handleStartCommand");
+async function handleMarketsCommand(env, message) {
+  const user = message.from;
+  if (!user?.id) {
+    return { status: "IGNORED" };
+  }
+  await upsertSubscriber(env, {
+    telegramUserId: user.id,
+    username: user.username,
+    firstName: user.first_name
+  });
+  await callTelegramApi(env, "sendMessage", {
+    chat_id: user.id,
+    text: buildPreferencePromptMessage(),
+    parse_mode: "HTML",
+    reply_markup: buildMarketPreferenceKeyboard(),
+    link_preview_options: { is_disabled: true }
+  });
+  return { status: "PREFERENCE_PROMPT_SENT" };
+}
+__name(handleMarketsCommand, "handleMarketsCommand");
+async function handleCallbackQuery(env, callbackQuery) {
+  const data = String(callbackQuery.data || "");
+  const user = callbackQuery.from;
+  if (!user?.id || !data.startsWith("pref:")) {
+    return { status: "IGNORED" };
+  }
+  const preference = data.slice("pref:".length).toLowerCase();
+  const allowed = Object.values(PREFERENCES);
+  if (!allowed.includes(preference)) {
+    await callTelegramApi(env, "answerCallbackQuery", {
+      callback_query_id: callbackQuery.id,
+      text: "Invalid choice",
+      show_alert: false
+    });
+    return { status: "INVALID_PREFERENCE" };
+  }
+  await setPreference(env, user.id, preference);
+  await callTelegramApi(env, "answerCallbackQuery", {
+    callback_query_id: callbackQuery.id,
+    text: "Preference saved",
+    show_alert: false
+  });
+  await callTelegramApi(env, "sendMessage", {
+    chat_id: user.id,
+    text: buildPreferenceSavedMessage(preference),
+    parse_mode: "HTML",
+    link_preview_options: { is_disabled: true }
+  });
+  if (callbackQuery.message?.chat?.id && callbackQuery.message?.message_id) {
+    try {
+      await callTelegramApi(env, "editMessageReplyMarkup", {
+        chat_id: callbackQuery.message.chat.id,
+        message_id: callbackQuery.message.message_id,
+        reply_markup: { inline_keyboard: [] }
+      });
+    } catch (_error) {
+    }
+  }
+  logInfo("PREFERENCE_SAVED", {
+    telegramUserId: String(user.id),
+    preference
+  });
+  return { status: "PREFERENCE_SAVED", preference };
+}
+__name(handleCallbackQuery, "handleCallbackQuery");
+function channelMatchesConfigured(env, chat) {
+  const configured = String(env.TELEGRAM_CHANNEL_ID || "").trim();
+  if (!configured) {
+    return true;
+  }
+  const chatId = String(chat?.id || "");
+  const username = String(chat?.username || "").trim();
+  const withAt = username ? `@${username}` : "";
+  const configuredBare = configured.replace(/^@/, "");
+  return configured === chatId || configured === withAt || configured === username || configuredBare === username;
+}
+__name(channelMatchesConfigured, "channelMatchesConfigured");
+async function handleChatMemberJoin(env, chatMemberUpdate) {
+  const newMember = chatMemberUpdate.new_chat_member;
+  const oldMember = chatMemberUpdate.old_chat_member;
+  const user = newMember?.user;
+  if (!user?.id || user.is_bot) {
+    return { status: "IGNORED" };
+  }
+  if (!channelMatchesConfigured(env, chatMemberUpdate.chat)) {
+    return { status: "IGNORED_OTHER_CHAT" };
+  }
+  if (!isJoinToMember(oldMember?.status, newMember?.status)) {
+    return { status: "IGNORED_NOT_JOIN" };
+  }
+  try {
+    return await sendWelcomeFlow(env, user, { force: false });
+  } catch (error) {
+    logWarn("JOIN_WELCOME_REQUIRES_START", {
+      telegramUserId: String(user.id),
+      reason: String(error.message || error)
+    });
+    return {
+      status: "NEEDS_USER_START",
+      reason: String(error.message || error)
+    };
+  }
+}
+__name(handleChatMemberJoin, "handleChatMemberJoin");
+async function handleTelegramUpdate(env, update) {
+  try {
+    if (update?.callback_query) {
+      return await handleCallbackQuery(env, update.callback_query);
+    }
+    if (update?.message?.text) {
+      const text = String(update.message.text).trim();
+      if (text === "/start" || text.startsWith("/start ")) {
+        return await handleStartCommand(env, update.message);
+      }
+      if (text === "/markets" || text.startsWith("/markets ")) {
+        return await handleMarketsCommand(env, update.message);
+      }
+    }
+    if (update?.chat_member) {
+      return await handleChatMemberJoin(env, update.chat_member);
+    }
+    return { status: "IGNORED" };
+  } catch (error) {
+    logError("TELEGRAM_UPDATE_FAILED", {
+      reason: String(error.message || error),
+      updateType: Object.keys(update || {}).join(",")
+    });
+    return {
+      status: "ERROR",
+      reason: String(error.message || error)
+    };
+  }
+}
+__name(handleTelegramUpdate, "handleTelegramUpdate");
+async function verifyTelegramWebhookSecret(request, env) {
+  const configured = env.TELEGRAM_WEBHOOK_SECRET;
+  if (!configured) {
+    return true;
+  }
+  const header = request.headers.get("x-telegram-bot-api-secret-token");
+  return header === String(configured);
+}
+__name(verifyTelegramWebhookSecret, "verifyTelegramWebhookSecret");
+
 // src/cloudflare/worker.js
 function json(data, status = 200) {
   return Response.json(data, { status });
 }
 __name(json, "json");
 var worker_default = {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === "/health") {
       return json({
@@ -5442,6 +6196,26 @@ var worker_default = {
         );
       }
     }
+    if (url.pathname === "/telegram/webhook" && request.method === "POST") {
+      const allowed = await verifyTelegramWebhookSecret(request, env);
+      if (!allowed) {
+        return json({ status: "UNAUTHORIZED" }, 401);
+      }
+      let update;
+      try {
+        update = await request.json();
+      } catch (_error) {
+        return json({ status: "BAD_REQUEST" }, 400);
+      }
+      ctx.waitUntil(
+        handleTelegramUpdate(env, update).catch((error) => {
+          logError("WEBHOOK_ASYNC_FAILURE", {
+            reason: String(error.message || error)
+          });
+        })
+      );
+      return json({ status: "OK" });
+    }
     return new Response("Midnight Society Cloudflare Worker is running.", {
       status: 200,
       headers: { "content-type": "text/plain; charset=utf-8" }
@@ -5461,7 +6235,9 @@ var worker_default = {
       (async () => {
         try {
           if (cron === "*/5 * * * *") {
-            const minute = new Date(event.scheduledTime || Date.now()).getUTCMinutes();
+            const minute = new Date(
+              event.scheduledTime || Date.now()
+            ).getUTCMinutes();
             if (minute % 10 < 5) {
               await runNewsJob(env, {
                 ...telegramOptions,
@@ -5525,40 +6301,9 @@ var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "drainBody");
 var middleware_ensure_req_body_drained_default = drainBody;
 
-// C:/Users/shawn/AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
-init_modules_watch_stub();
-function reduceError(e) {
-  return {
-    name: e?.name,
-    message: e?.message ?? String(e),
-    stack: e?.stack,
-    cause: e?.cause === void 0 ? void 0 : reduceError(e.cause)
-  };
-}
-__name(reduceError, "reduceError");
-var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env);
-  } catch (e) {
-    const error = reduceError(e);
-    const body = JSON.stringify(error);
-    const headers = {
-      "Content-Type": "application/json",
-      "MF-Experimental-Error-Stack": "true"
-    };
-    const encoded = encodeURIComponent(body);
-    if (encoded.length <= 8192) {
-      headers["MF-Experimental-Error-Stack-Payload"] = encoded;
-    }
-    return new Response(body, { status: 500, headers });
-  }
-}, "jsonError");
-var middleware_miniflare3_json_error_default = jsonError;
-
-// .wrangler/tmp/bundle-l1XdLl/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-yTptfc/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
-  middleware_ensure_req_body_drained_default,
-  middleware_miniflare3_json_error_default
+  middleware_ensure_req_body_drained_default
 ];
 var middleware_insertion_facade_default = worker_default;
 
@@ -5588,7 +6333,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-l1XdLl/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-yTptfc/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

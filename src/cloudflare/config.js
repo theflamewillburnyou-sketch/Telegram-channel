@@ -74,7 +74,7 @@ export function getConfig(env) {
       getEnvString(env, "AI_PROVIDER_MAX_RETRIES", "1")
     ),
     // Conservative Worker bounds
-    maxRssSourcesPerRun: Number(getEnvString(env, "CF_MAX_RSS_SOURCES", "8")),
+    maxRssSourcesPerRun: Number(getEnvString(env, "CF_MAX_RSS_SOURCES", "24")),
     maxNewEventsPerRun: Number(getEnvString(env, "CF_MAX_NEW_EVENTS", "5")),
     maxAiCallsPerRun: Number(getEnvString(env, "CF_MAX_AI_CALLS", "3")),
     maxMarketEventsPerRun: Number(getEnvString(env, "CF_MAX_MARKET_EVENTS", "10")),

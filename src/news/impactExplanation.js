@@ -3,29 +3,39 @@ function generateImpactExplanation(article) {
   
     let explanation = "";
   
-    if (marketTags.includes("crypto")) {
+    if (marketTags.includes("crypto") || marketTags.includes("cryptoMarket")) {
       explanation =
         "The event is relevant to the crypto market and may affect sentiment around crypto infrastructure and institutional activity.";
     }
   
-    if (marketTags.includes("oil")) {
+    if (marketTags.includes("oil") || marketTags.includes("energy")) {
       explanation =
-        "The event may affect oil supply, demand, pricing, or energy-market sentiment.";
+        "The event may affect oil or energy supply, demand, pricing, or energy-market sentiment.";
     }
   
-    if (marketTags.includes("gold")) {
+    if (marketTags.includes("gold") || marketTags.includes("copper")) {
       explanation =
-        "The event may influence safe-haven demand, inflation expectations, or precious-metals sentiment.";
+        "The event may influence metals demand, inflation expectations, or industrial/precious-metals sentiment.";
     }
   
-    if (marketTags.includes("usStocks")) {
+    if (marketTags.includes("usStocks") || marketTags.includes("stockMarket")) {
       explanation =
-        "The event may affect U.S. equities through earnings, economic expectations, interest rates, or investor sentiment.";
+        "The event may affect equities through earnings, corporate actions, economic expectations, interest rates, or investor sentiment.";
+    }
+
+    if (marketTags.includes("europeStocks")) {
+      explanation =
+        "The event may affect European equities through earnings, policy, growth expectations, or regional risk sentiment.";
     }
   
     if (marketTags.includes("indiaStocks")) {
       explanation =
         "The event may affect Indian equities through earnings, economic expectations, foreign flows, or domestic sentiment.";
+    }
+
+    if (marketTags.includes("macro")) {
+      explanation =
+        "The event is a macro data or policy signal that can reprice equities, bonds, and risk appetite.";
     }
   
     if (marketTags.includes("geopolitics")) {
