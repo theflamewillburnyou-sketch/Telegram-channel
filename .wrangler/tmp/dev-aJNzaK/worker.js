@@ -2759,10 +2759,10 @@ var require_performanceCalculator = __commonJS({
   }
 });
 
-// .wrangler/tmp/bundle-3tYgR3/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-l17A2B/middleware-loader.entry.ts
 init_modules_watch_stub();
 
-// .wrangler/tmp/bundle-3tYgR3/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-l17A2B/middleware-insertion-facade.js
 init_modules_watch_stub();
 
 // src/cloudflare/worker.js
@@ -2823,10 +2823,16 @@ function getConfig(env) {
       "OPENROUTER_APP_NAME",
       "Midnight Society"
     ),
+    // Workers AI — no API key; uses env.AI binding
+    cloudflareAiModel: getEnvString(
+      env,
+      "CLOUDFLARE_AI_MODEL",
+      "@cf/meta/llama-3.1-8b-instruct"
+    ),
     aiProviderOrder: getEnvString(
       env,
       "AI_PROVIDER_ORDER",
-      "GEMINI,GROQ,OPENROUTER"
+      "GEMINI,GROQ,OPENROUTER,CLOUDFLARE"
     ),
     aiProviderMaxRetries: Number(
       getEnvString(env, "AI_PROVIDER_MAX_RETRIES", "1")
@@ -4721,10 +4727,17 @@ __name(analyzeWithGroq, "analyzeWithGroq");
 // src/cloudflare/ai/openrouterProvider.js
 init_modules_watch_stub();
 var OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+var OPENROUTER_FREE_MODELS = [
+  "openrouter/free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "google/gemma-3-12b-it:free",
+  "qwen/qwen3-8b:free",
+  "mistralai/mistral-small-3.1-24b-instruct:free"
+];
 async function analyzeWithOpenRouter(env, article) {
   const config = getConfig(env);
   const apiKey = config.openRouterApiKey;
-  const model = config.openRouterModel;
+  const primary = config.openRouterModel || "openrouter/free";
   if (!apiKey) {
     const error = new Error(
       "OpenRouter API key not configured"
@@ -4732,6 +4745,13 @@ async function analyzeWithOpenRouter(env, article) {
     error.status = 401;
     throw error;
   }
+  const freeCascade = [
+    primary,
+    ...OPENROUTER_FREE_MODELS.filter((id) => id !== primary)
+  ].filter((id) => {
+    const lower = String(id).toLowerCase();
+    return lower === "openrouter/free" || lower.endsWith(":free") || lower.includes("/free");
+  });
   const prompt = buildAnalysisPrompt(article);
   const response = await fetch(OPENROUTER_API_URL, {
     method: "POST",
@@ -4742,7 +4762,8 @@ async function analyzeWithOpenRouter(env, article) {
       "X-Title": config.openRouterAppName
     },
     body: JSON.stringify({
-      model,
+      model: freeCascade[0],
+      models: freeCascade,
       temperature: 0.2,
       messages: [
         {
@@ -4816,6 +4837,64 @@ async function analyzeWithOpenRouter(env, article) {
 }
 __name(analyzeWithOpenRouter, "analyzeWithOpenRouter");
 
+// src/cloudflare/ai/cloudflareAiProvider.js
+init_modules_watch_stub();
+async function analyzeWithCloudflareAi(env, article) {
+  if (!env?.AI || typeof env.AI.run !== "function") {
+    const error = new Error(
+      "Cloudflare Workers AI binding not configured"
+    );
+    error.status = 401;
+    throw error;
+  }
+  const config = getConfig(env);
+  const model = config.cloudflareAiModel || "@cf/meta/llama-3.1-8b-instruct";
+  const prompt = buildAnalysisPrompt(article);
+  let payload;
+  try {
+    payload = await env.AI.run(model, {
+      messages: [
+        {
+          role: "system",
+          content: "You are Midnight Society's market intelligence engine. Return only valid JSON matching the requested schema. No markdown."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      max_tokens: 1024
+    });
+  } catch (error) {
+    const wrapped = new Error(
+      `Cloudflare AI error: ${error.message || error}`
+    );
+    wrapped.status = 503;
+    throw wrapped;
+  }
+  const content = typeof payload === "string" ? payload : payload?.response || payload?.result?.response || payload?.choices?.[0]?.message?.content || "";
+  let analysis;
+  try {
+    analysis = parseJsonResponse(content);
+  } catch (error) {
+    const parseError = new Error(
+      `Invalid response from Cloudflare AI: ${error.message}`
+    );
+    parseError.status = 502;
+    throw parseError;
+  }
+  const validation = validateAnalysis(analysis);
+  if (!validation.valid) {
+    const validationError = new Error(
+      `Invalid response from Cloudflare AI: ${validation.reason}`
+    );
+    validationError.status = 502;
+    throw validationError;
+  }
+  return analysis;
+}
+__name(analyzeWithCloudflareAi, "analyzeWithCloudflareAi");
+
 // src/cloudflare/ai/ruleFallback.js
 init_modules_watch_stub();
 function mapMagnitude(impactLevel) {
@@ -4878,7 +4957,7 @@ function classifyProviderError(error) {
     return {
       type: ERROR_TYPES.MISSING_API_KEY,
       retryable: false,
-      cooldown: true,
+      cooldown: false,
       retryAfterMs: null
     };
   }
@@ -5085,12 +5164,17 @@ var PROVIDERS = {
   OPENROUTER: {
     name: "OPENROUTER",
     analyze: analyzeWithOpenRouter
+  },
+  CLOUDFLARE: {
+    name: "CLOUDFLARE",
+    analyze: analyzeWithCloudflareAi
   }
 };
 var DEFAULT_ORDER = [
   "GEMINI",
   "GROQ",
-  "OPENROUTER"
+  "OPENROUTER",
+  "CLOUDFLARE"
 ];
 function getProviderOrder(env) {
   const config = getConfig(env);
@@ -5098,9 +5182,29 @@ function getProviderOrder(env) {
   if (!configured) {
     return [...DEFAULT_ORDER];
   }
-  return configured.split(",").map((name) => name.trim().toUpperCase()).filter((name) => PROVIDERS[name]);
+  const parsed = configured.split(",").map((name) => name.trim().toUpperCase()).filter((name) => PROVIDERS[name]);
+  if (!parsed.includes("CLOUDFLARE") && PROVIDERS.CLOUDFLARE) {
+    parsed.push("CLOUDFLARE");
+  }
+  return parsed.length ? parsed : [...DEFAULT_ORDER];
 }
 __name(getProviderOrder, "getProviderOrder");
+function isProviderConfigured(env, providerName) {
+  const config = getConfig(env);
+  switch (String(providerName || "").toUpperCase()) {
+    case "GEMINI":
+      return Boolean(config.googleApiKey);
+    case "GROQ":
+      return Boolean(config.groqApiKey);
+    case "OPENROUTER":
+      return Boolean(config.openRouterApiKey);
+    case "CLOUDFLARE":
+      return Boolean(env?.AI && typeof env.AI.run === "function");
+    default:
+      return false;
+  }
+}
+__name(isProviderConfigured, "isProviderConfigured");
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -5134,6 +5238,14 @@ async function tryProvider(env, provider, article, maxRetries) {
         });
         await sleep(500 * attempt);
         continue;
+      }
+      if (classified.type === ERROR_TYPES.MISSING_API_KEY || classified.type === ERROR_TYPES.AUTH_ERROR) {
+        return {
+          provider: provider.name,
+          status: "FAILED",
+          errorType: classified.type,
+          error: error.message
+        };
       }
       if (classified.cooldown) {
         const cooldownMs = classified.retryAfterMs || DEFAULT_COOLDOWN_MS;
@@ -5170,6 +5282,14 @@ async function routeAI(env, article) {
   for (const providerName of order) {
     const provider = PROVIDERS[providerName];
     if (!provider) {
+      continue;
+    }
+    if (!isProviderConfigured(env, providerName)) {
+      logInfo("ai_router_skipped_unconfigured", { provider: providerName });
+      attempts.push({
+        provider: providerName,
+        status: "SKIPPED_UNCONFIGURED"
+      });
       continue;
     }
     const available = await isProviderAvailable(env, providerName);
@@ -6340,7 +6460,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-3tYgR3/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-l17A2B/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -6373,7 +6493,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-3tYgR3/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-l17A2B/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

@@ -65,10 +65,16 @@ export function getConfig(env) {
       "OPENROUTER_APP_NAME",
       "Midnight Society"
     ),
+    // Workers AI — no API key; uses env.AI binding
+    cloudflareAiModel: getEnvString(
+      env,
+      "CLOUDFLARE_AI_MODEL",
+      "@cf/meta/llama-3.1-8b-instruct"
+    ),
     aiProviderOrder: getEnvString(
       env,
       "AI_PROVIDER_ORDER",
-      "GEMINI,GROQ,OPENROUTER"
+      "GEMINI,GROQ,OPENROUTER,CLOUDFLARE"
     ),
     aiProviderMaxRetries: Number(
       getEnvString(env, "AI_PROVIDER_MAX_RETRIES", "1")

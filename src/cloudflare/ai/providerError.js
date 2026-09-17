@@ -33,7 +33,7 @@ export function classifyProviderError(error) {
     return {
       type: ERROR_TYPES.MISSING_API_KEY,
       retryable: false,
-      cooldown: true,
+      cooldown: false,
       retryAfterMs: null
     };
   }

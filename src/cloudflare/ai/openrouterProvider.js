@@ -8,15 +8,24 @@ import { validateAnalysis } from "./validateAnalysis.js";
 const OPENROUTER_API_URL =
   "https://openrouter.ai/api/v1/chat/completions";
 
+/** Free-only cascade — OpenRouter tries these in order when primary is busy. */
+export const OPENROUTER_FREE_MODELS = [
+  "openrouter/free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "google/gemma-3-12b-it:free",
+  "qwen/qwen3-8b:free",
+  "mistralai/mistral-small-3.1-24b-instruct:free"
+];
+
 /**
- * OpenRouter chat completions — free model only from config.
+ * OpenRouter chat completions — free models only.
  * Does NOT honor OPENROUTER_ALLOW_PAID; paid responses are always rejected.
  * Never logs the API key.
  */
 export async function analyzeWithOpenRouter(env, article) {
   const config = getConfig(env);
   const apiKey = config.openRouterApiKey;
-  const model = config.openRouterModel;
+  const primary = config.openRouterModel || "openrouter/free";
 
   if (!apiKey) {
     const error = new Error(
@@ -25,6 +34,19 @@ export async function analyzeWithOpenRouter(env, article) {
     error.status = 401;
     throw error;
   }
+
+  // Prefer configured free model, then known :free / free-router fallbacks
+  const freeCascade = [
+    primary,
+    ...OPENROUTER_FREE_MODELS.filter((id) => id !== primary)
+  ].filter((id) => {
+    const lower = String(id).toLowerCase();
+    return (
+      lower === "openrouter/free" ||
+      lower.endsWith(":free") ||
+      lower.includes("/free")
+    );
+  });
 
   const prompt = buildAnalysisPrompt(article);
 
@@ -37,7 +59,8 @@ export async function analyzeWithOpenRouter(env, article) {
       "X-Title": config.openRouterAppName
     },
     body: JSON.stringify({
-      model,
+      model: freeCascade[0],
+      models: freeCascade,
       temperature: 0.2,
       messages: [
         {

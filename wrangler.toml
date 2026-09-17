@@ -26,13 +26,18 @@ TELEGRAM_MIN_MINUTES_BETWEEN_POSTS = "10"
 GEMINI_MODEL = "gemini-2.0-flash"
 GROQ_MODEL = "llama-3.1-8b-instant"
 OPENROUTER_MODEL = "openrouter/free"
-AI_PROVIDER_ORDER = "GEMINI,GROQ,OPENROUTER"
+CLOUDFLARE_AI_MODEL = "@cf/meta/llama-3.1-8b-instruct"
+AI_PROVIDER_ORDER = "GEMINI,GROQ,OPENROUTER,CLOUDFLARE"
 AI_PROVIDER_MAX_RETRIES = "1"
 CF_MAX_RSS_SOURCES = "24"
 CF_MAX_NEW_EVENTS = "5"
 CF_MAX_AI_CALLS = "3"
 CF_MAX_MARKET_EVENTS = "10"
 CF_MAX_SYMBOLS_PER_EVENT = "4"
+
+# Free Cloudflare Workers AI (no external key) — last LLM before rule fallback
+[ai]
+binding = "AI"
 
 # Cron Triggers (UTC). Propagation can take several minutes after deploy.
 # 0,30 — news + market every 30 minutes

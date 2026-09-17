@@ -2,8 +2,12 @@ import { getConfig } from "../config.js";
 import { analyzeWithGemini } from "./geminiProvider.js";
 import { analyzeWithGroq } from "./groqProvider.js";
 import { analyzeWithOpenRouter } from "./openrouterProvider.js";
+import { analyzeWithCloudflareAi } from "./cloudflareAiProvider.js";
 import { createRuleFallback } from "./ruleFallback.js";
-import { classifyProviderError } from "./providerError.js";
+import {
+  classifyProviderError,
+  ERROR_TYPES
+} from "./providerError.js";
 import {
   isProviderAvailable,
   markProviderSuccess,
@@ -24,13 +28,19 @@ const PROVIDERS = {
   OPENROUTER: {
     name: "OPENROUTER",
     analyze: analyzeWithOpenRouter
+  },
+  CLOUDFLARE: {
+    name: "CLOUDFLARE",
+    analyze: analyzeWithCloudflareAi
   }
 };
 
+/** Free-first order: Gemini → Groq → OpenRouter free → Workers AI → rules */
 export const DEFAULT_ORDER = [
   "GEMINI",
   "GROQ",
-  "OPENROUTER"
+  "OPENROUTER",
+  "CLOUDFLARE"
 ];
 
 function getProviderOrder(env) {
@@ -41,10 +51,37 @@ function getProviderOrder(env) {
     return [...DEFAULT_ORDER];
   }
 
-  return configured
+  const parsed = configured
     .split(",")
     .map((name) => name.trim().toUpperCase())
     .filter((name) => PROVIDERS[name]);
+
+  // Always keep Cloudflare Workers AI as last paid-free net before rules
+  if (!parsed.includes("CLOUDFLARE") && PROVIDERS.CLOUDFLARE) {
+    parsed.push("CLOUDFLARE");
+  }
+
+  return parsed.length ? parsed : [...DEFAULT_ORDER];
+}
+
+/**
+ * Skip providers that have no credentials / binding — don't burn retries.
+ */
+export function isProviderConfigured(env, providerName) {
+  const config = getConfig(env);
+
+  switch (String(providerName || "").toUpperCase()) {
+    case "GEMINI":
+      return Boolean(config.googleApiKey);
+    case "GROQ":
+      return Boolean(config.groqApiKey);
+    case "OPENROUTER":
+      return Boolean(config.openRouterApiKey);
+    case "CLOUDFLARE":
+      return Boolean(env?.AI && typeof env.AI.run === "function");
+    default:
+      return false;
+  }
 }
 
 function sleep(ms) {
@@ -91,6 +128,19 @@ async function tryProvider(env, provider, article, maxRetries) {
         continue;
       }
 
+      // Missing keys / auth misconfig: skip without long cooldown pollution
+      if (
+        classified.type === ERROR_TYPES.MISSING_API_KEY ||
+        classified.type === ERROR_TYPES.AUTH_ERROR
+      ) {
+        return {
+          provider: provider.name,
+          status: "FAILED",
+          errorType: classified.type,
+          error: error.message
+        };
+      }
+
       if (classified.cooldown) {
         const cooldownMs =
           classified.retryAfterMs ||
@@ -126,6 +176,7 @@ async function tryProvider(env, provider, article, maxRetries) {
 
 /**
  * Failover AI routing with async D1 provider cooldown state.
+ * Always ends on RULE_FALLBACK so the pipeline never hard-stops.
  */
 export async function routeAI(env, article) {
   const config = getConfig(env);
@@ -137,6 +188,15 @@ export async function routeAI(env, article) {
     const provider = PROVIDERS[providerName];
 
     if (!provider) {
+      continue;
+    }
+
+    if (!isProviderConfigured(env, providerName)) {
+      logInfo("ai_router_skipped_unconfigured", { provider: providerName });
+      attempts.push({
+        provider: providerName,
+        status: "SKIPPED_UNCONFIGURED"
+      });
       continue;
     }
 
