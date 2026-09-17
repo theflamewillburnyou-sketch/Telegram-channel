@@ -1,0 +1,50 @@
+name = "old-shape-9da6telegramchannel"
+main = "src/cloudflare/worker.js"
+compatibility_date = "2026-09-17"
+compatibility_flags = ["nodejs_compat"]
+
+# Production DB binding — deploy MUST use database_id (midnightmarketnews).
+# Preview DB is only available as DB_PREVIEW for admin/migrations.
+# For remote dev against preview, use: npx wrangler dev --remote --persist=false
+# and temporarily set preview via dashboard, or bind DB_PREVIEW in test code.
+[[d1_databases]]
+binding = "DB"
+database_name = "midnightmarketnews"
+database_id = "d1534914-a9dd-4362-b409-e5b07a28061f"
+
+# Named binding so Wrangler can target preview for migrations/admin only.
+[[d1_databases]]
+binding = "DB_PREVIEW"
+database_name = "midnightmarketnews-preview"
+database_id = "60fa1e53-fced-40a9-943f-d0815b2b2d00"
+
+# Non-secret runtime config (secrets are set via `wrangler secret put`)
+[vars]
+CF_ALLOW_PRODUCTION_TELEGRAM = "true"
+TELEGRAM_MAX_POSTS_PER_JOB = "1"
+TELEGRAM_MIN_MINUTES_BETWEEN_POSTS = "10"
+GEMINI_MODEL = "gemini-2.0-flash"
+GROQ_MODEL = "llama-3.1-8b-instant"
+OPENROUTER_MODEL = "openrouter/free"
+AI_PROVIDER_ORDER = "GEMINI,GROQ,OPENROUTER"
+AI_PROVIDER_MAX_RETRIES = "1"
+CF_MAX_RSS_SOURCES = "8"
+CF_MAX_NEW_EVENTS = "5"
+CF_MAX_AI_CALLS = "3"
+CF_MAX_MARKET_EVENTS = "10"
+CF_MAX_SYMBOLS_PER_EVENT = "4"
+
+# Cron Triggers (UTC). Propagation can take several minutes after deploy.
+# */5 — news (minutes 0-4 of each 10) or market (minutes 5-9)
+# 1-59/5 — publish sweep
+# 2-59/5 — reaction publish sweep
+# */30 — performance
+# 15 3 * * * — daily maintenance 03:15 UTC
+[triggers]
+crons = [
+  "*/5 * * * *",
+  "1-59/5 * * * *",
+  "2-59/5 * * * *",
+  "*/30 * * * *",
+  "15 3 * * *"
+]
