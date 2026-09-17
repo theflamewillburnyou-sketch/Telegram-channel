@@ -35,16 +35,16 @@ CF_MAX_MARKET_EVENTS = "10"
 CF_MAX_SYMBOLS_PER_EVENT = "4"
 
 # Cron Triggers (UTC). Propagation can take several minutes after deploy.
-# */5 — news (minutes 0-4 of each 10) or market (minutes 5-9)
-# 1-59/5 — publish sweep
-# 2-59/5 — reaction publish sweep
-# */30 — performance
+# 0,30 — news (:00) or market (:30)
+# 5,35 — publish sweep
+# 10,40 — reaction publish sweep
+# 15,45 — performance
 # 15 3 * * * — daily maintenance 03:15 UTC
 [triggers]
 crons = [
-  "*/5 * * * *",
-  "1-59/5 * * * *",
-  "2-59/5 * * * *",
-  "*/30 * * * *",
+  "0,30 * * * *",
+  "5,35 * * * *",
+  "10,40 * * * *",
+  "15,45 * * * *",
   "15 3 * * *"
 ]

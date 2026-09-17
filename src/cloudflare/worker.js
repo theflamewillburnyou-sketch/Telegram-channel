@@ -126,12 +126,13 @@ export default {
     ctx.waitUntil(
       (async () => {
         try {
-          if (cron === "*/5 * * * *") {
+          if (cron === "0,30 * * * *") {
             const minute = new Date(
               event.scheduledTime || Date.now()
             ).getUTCMinutes();
 
-            if (minute % 10 < 5) {
+            // :00 news, :30 market — every 30 minutes
+            if (minute < 15) {
               await runNewsJob(env, {
                 ...telegramOptions,
                 maxNewEvents: getConfig(env).maxNewEventsPerRun,
@@ -144,17 +145,17 @@ export default {
             return;
           }
 
-          if (cron === "1-59/5 * * * *") {
+          if (cron === "5,35 * * * *") {
             await runPublishJob(env, telegramOptions);
             return;
           }
 
-          if (cron === "2-59/5 * * * *") {
+          if (cron === "10,40 * * * *") {
             await runReactionJob(env, telegramOptions);
             return;
           }
 
-          if (cron === "*/30 * * * *") {
+          if (cron === "15,45 * * * *") {
             await runPerformanceJob(env);
             return;
           }

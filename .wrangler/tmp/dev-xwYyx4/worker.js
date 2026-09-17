@@ -2759,10 +2759,10 @@ var require_performanceCalculator = __commonJS({
   }
 });
 
-// .wrangler/tmp/bundle-DYt6xu/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-S3WVfQ/middleware-loader.entry.ts
 init_modules_watch_stub();
 
-// .wrangler/tmp/bundle-DYt6xu/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-S3WVfQ/middleware-insertion-facade.js
 init_modules_watch_stub();
 
 // src/cloudflare/worker.js
@@ -6234,11 +6234,11 @@ var worker_default = {
     ctx.waitUntil(
       (async () => {
         try {
-          if (cron === "*/5 * * * *") {
+          if (cron === "0,30 * * * *") {
             const minute = new Date(
               event.scheduledTime || Date.now()
             ).getUTCMinutes();
-            if (minute % 10 < 5) {
+            if (minute < 15) {
               await runNewsJob(env, {
                 ...telegramOptions,
                 maxNewEvents: getConfig(env).maxNewEventsPerRun,
@@ -6249,15 +6249,15 @@ var worker_default = {
             }
             return;
           }
-          if (cron === "1-59/5 * * * *") {
+          if (cron === "5,35 * * * *") {
             await runPublishJob(env, telegramOptions);
             return;
           }
-          if (cron === "2-59/5 * * * *") {
+          if (cron === "10,40 * * * *") {
             await runReactionJob(env, telegramOptions);
             return;
           }
-          if (cron === "*/30 * * * *") {
+          if (cron === "15,45 * * * *") {
             await runPerformanceJob(env);
             return;
           }
@@ -6331,7 +6331,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-DYt6xu/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-S3WVfQ/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -6364,7 +6364,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-DYt6xu/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-S3WVfQ/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

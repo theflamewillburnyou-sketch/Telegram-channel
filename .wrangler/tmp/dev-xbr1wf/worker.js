@@ -2759,10 +2759,10 @@ var require_performanceCalculator = __commonJS({
   }
 });
 
-// .wrangler/tmp/bundle-ldxstx/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-ihh7cb/middleware-loader.entry.ts
 init_modules_watch_stub();
 
-// .wrangler/tmp/bundle-ldxstx/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-ihh7cb/middleware-insertion-facade.js
 init_modules_watch_stub();
 
 // src/cloudflare/worker.js
@@ -6234,11 +6234,11 @@ var worker_default = {
     ctx.waitUntil(
       (async () => {
         try {
-          if (cron === "*/5 * * * *") {
+          if (cron === "0,30 * * * *") {
             const minute = new Date(
               event.scheduledTime || Date.now()
             ).getUTCMinutes();
-            if (minute % 10 < 5) {
+            if (minute < 15) {
               await runNewsJob(env, {
                 ...telegramOptions,
                 maxNewEvents: getConfig(env).maxNewEventsPerRun,
@@ -6249,15 +6249,15 @@ var worker_default = {
             }
             return;
           }
-          if (cron === "1-59/5 * * * *") {
+          if (cron === "5,35 * * * *") {
             await runPublishJob(env, telegramOptions);
             return;
           }
-          if (cron === "2-59/5 * * * *") {
+          if (cron === "10,40 * * * *") {
             await runReactionJob(env, telegramOptions);
             return;
           }
-          if (cron === "*/30 * * * *") {
+          if (cron === "15,45 * * * *") {
             await runPerformanceJob(env);
             return;
           }
@@ -6301,40 +6301,9 @@ var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "drainBody");
 var middleware_ensure_req_body_drained_default = drainBody;
 
-// C:/Users/shawn/AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
-init_modules_watch_stub();
-function reduceError(e) {
-  return {
-    name: e?.name,
-    message: e?.message ?? String(e),
-    stack: e?.stack,
-    cause: e?.cause === void 0 ? void 0 : reduceError(e.cause)
-  };
-}
-__name(reduceError, "reduceError");
-var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env);
-  } catch (e) {
-    const error = reduceError(e);
-    const body = JSON.stringify(error);
-    const headers = {
-      "Content-Type": "application/json",
-      "MF-Experimental-Error-Stack": "true"
-    };
-    const encoded = encodeURIComponent(body);
-    if (encoded.length <= 8192) {
-      headers["MF-Experimental-Error-Stack-Payload"] = encoded;
-    }
-    return new Response(body, { status: 500, headers });
-  }
-}, "jsonError");
-var middleware_miniflare3_json_error_default = jsonError;
-
-// .wrangler/tmp/bundle-ldxstx/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-ihh7cb/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
-  middleware_ensure_req_body_drained_default,
-  middleware_miniflare3_json_error_default
+  middleware_ensure_req_body_drained_default
 ];
 var middleware_insertion_facade_default = worker_default;
 
@@ -6364,7 +6333,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-ldxstx/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-ihh7cb/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
