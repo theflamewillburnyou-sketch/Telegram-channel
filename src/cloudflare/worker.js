@@ -71,6 +71,31 @@ export default {
       }
     }
 
+    // Manual job trigger (Bearer = TELEGRAM_BOT_TOKEN). Used for live ops checks.
+    if (url.pathname === "/admin/run-news" && request.method === "POST") {
+      const auth = request.headers.get("authorization") || "";
+      const token = String(env.TELEGRAM_BOT_TOKEN || "");
+      if (!token || auth !== `Bearer ${token}`) {
+        return json({ status: "UNAUTHORIZED" }, 401);
+      }
+
+      const allowProductionTelegram =
+        getConfig(env).telegramTestChannelId ||
+        String(env.CF_ALLOW_PRODUCTION_TELEGRAM || "").toLowerCase() === "true";
+
+      const telegramOptions = allowProductionTelegram
+        ? {}
+        : { disableTelegram: true };
+
+      const result = await runNewsJob(env, {
+        ...telegramOptions,
+        maxNewEvents: getConfig(env).maxNewEventsPerRun,
+        maxAiCalls: getConfig(env).maxAiCallsPerRun
+      });
+
+      return json({ status: "SUCCESS", result });
+    }
+
     // Telegram webhook — welcome + market preference
     if (url.pathname === "/telegram/webhook" && request.method === "POST") {
       const allowed = await verifyTelegramWebhookSecret(request, env);
@@ -126,22 +151,14 @@ export default {
     ctx.waitUntil(
       (async () => {
         try {
+          // Every 30 min: news first, then market
           if (cron === "0,30 * * * *") {
-            const minute = new Date(
-              event.scheduledTime || Date.now()
-            ).getUTCMinutes();
-
-            // :00 news, :30 market — every 30 minutes
-            if (minute < 15) {
-              await runNewsJob(env, {
-                ...telegramOptions,
-                maxNewEvents: getConfig(env).maxNewEventsPerRun,
-                maxAiCalls: getConfig(env).maxAiCallsPerRun
-              });
-            } else {
-              await runMarketJob(env, telegramOptions);
-            }
-
+            await runNewsJob(env, {
+              ...telegramOptions,
+              maxNewEvents: getConfig(env).maxNewEventsPerRun,
+              maxAiCalls: getConfig(env).maxAiCallsPerRun
+            });
+            await runMarketJob(env, telegramOptions);
             return;
           }
 

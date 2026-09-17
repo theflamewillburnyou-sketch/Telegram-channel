@@ -35,7 +35,7 @@ CF_MAX_MARKET_EVENTS = "10"
 CF_MAX_SYMBOLS_PER_EVENT = "4"
 
 # Cron Triggers (UTC). Propagation can take several minutes after deploy.
-# 0,30 — news (:00) or market (:30)
+# 0,30 — news + market every 30 minutes
 # 5,35 — publish sweep
 # 10,40 — reaction publish sweep
 # 15,45 — performance

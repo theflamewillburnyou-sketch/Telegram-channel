@@ -2552,7 +2552,7 @@ var require_postBuilder = __commonJS({
     __name(buildReactionSection, "buildReactionSection");
     function getPostTypeHeader(postType) {
       const headers = {
-        BREAKING: "\u{1F6A8} <b>BREAKING</b>\nThis one just crossed our desk",
+        BREAKING: "\u{1F6A8} <b>BREAKING</b>",
         GEOPOLITICAL: "\u{1F30D} <b>GEOPOLITICAL RISK</b>\nWhen the world moves markets",
         CRYPTO: "\u20BF <b>CRYPTO PULSE</b>\nA signal worth a closer look",
         MACRO: "\u{1F3E6} <b>MACRO MOVE</b>\nPolicy and the bigger picture",
@@ -2759,10 +2759,10 @@ var require_performanceCalculator = __commonJS({
   }
 });
 
-// .wrangler/tmp/bundle-S3WVfQ/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-UYHY2y/middleware-loader.entry.ts
 init_modules_watch_stub();
 
-// .wrangler/tmp/bundle-S3WVfQ/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-UYHY2y/middleware-insertion-facade.js
 init_modules_watch_stub();
 
 // src/cloudflare/worker.js
@@ -6196,6 +6196,21 @@ var worker_default = {
         );
       }
     }
+    if (url.pathname === "/admin/run-news" && request.method === "POST") {
+      const auth = request.headers.get("authorization") || "";
+      const token = String(env.TELEGRAM_BOT_TOKEN || "");
+      if (!token || auth !== `Bearer ${token}`) {
+        return json({ status: "UNAUTHORIZED" }, 401);
+      }
+      const allowProductionTelegram = getConfig(env).telegramTestChannelId || String(env.CF_ALLOW_PRODUCTION_TELEGRAM || "").toLowerCase() === "true";
+      const telegramOptions = allowProductionTelegram ? {} : { disableTelegram: true };
+      const result = await runNewsJob(env, {
+        ...telegramOptions,
+        maxNewEvents: getConfig(env).maxNewEventsPerRun,
+        maxAiCalls: getConfig(env).maxAiCallsPerRun
+      });
+      return json({ status: "SUCCESS", result });
+    }
     if (url.pathname === "/telegram/webhook" && request.method === "POST") {
       const allowed = await verifyTelegramWebhookSecret(request, env);
       if (!allowed) {
@@ -6235,18 +6250,12 @@ var worker_default = {
       (async () => {
         try {
           if (cron === "0,30 * * * *") {
-            const minute = new Date(
-              event.scheduledTime || Date.now()
-            ).getUTCMinutes();
-            if (minute < 15) {
-              await runNewsJob(env, {
-                ...telegramOptions,
-                maxNewEvents: getConfig(env).maxNewEventsPerRun,
-                maxAiCalls: getConfig(env).maxAiCallsPerRun
-              });
-            } else {
-              await runMarketJob(env, telegramOptions);
-            }
+            await runNewsJob(env, {
+              ...telegramOptions,
+              maxNewEvents: getConfig(env).maxNewEventsPerRun,
+              maxAiCalls: getConfig(env).maxAiCallsPerRun
+            });
+            await runMarketJob(env, telegramOptions);
             return;
           }
           if (cron === "5,35 * * * *") {
@@ -6301,40 +6310,9 @@ var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "drainBody");
 var middleware_ensure_req_body_drained_default = drainBody;
 
-// C:/Users/shawn/AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
-init_modules_watch_stub();
-function reduceError(e) {
-  return {
-    name: e?.name,
-    message: e?.message ?? String(e),
-    stack: e?.stack,
-    cause: e?.cause === void 0 ? void 0 : reduceError(e.cause)
-  };
-}
-__name(reduceError, "reduceError");
-var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env);
-  } catch (e) {
-    const error = reduceError(e);
-    const body = JSON.stringify(error);
-    const headers = {
-      "Content-Type": "application/json",
-      "MF-Experimental-Error-Stack": "true"
-    };
-    const encoded = encodeURIComponent(body);
-    if (encoded.length <= 8192) {
-      headers["MF-Experimental-Error-Stack-Payload"] = encoded;
-    }
-    return new Response(body, { status: 500, headers });
-  }
-}, "jsonError");
-var middleware_miniflare3_json_error_default = jsonError;
-
-// .wrangler/tmp/bundle-S3WVfQ/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-UYHY2y/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
-  middleware_ensure_req_body_drained_default,
-  middleware_miniflare3_json_error_default
+  middleware_ensure_req_body_drained_default
 ];
 var middleware_insertion_facade_default = worker_default;
 
@@ -6364,7 +6342,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-S3WVfQ/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-UYHY2y/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

@@ -256,7 +256,7 @@ function getPostTypeHeader(postType) {
 
   const headers = {
     BREAKING:
-      "🚨 <b>BREAKING</b>\nThis one just crossed our desk",
+      "🚨 <b>BREAKING</b>",
 
     GEOPOLITICAL:
       "🌍 <b>GEOPOLITICAL RISK</b>\nWhen the world moves markets",
