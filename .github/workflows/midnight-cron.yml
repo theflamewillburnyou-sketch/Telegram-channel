@@ -1,0 +1,70 @@
+# Midnight Society — free scheduled jobs (GitHub Actions)
+# Runs news/market/publish against production D1 via API.
+# Cloudflare Worker stays for Telegram webhook only (no heavy crons).
+
+name: Midnight Society Cron
+
+on:
+  schedule:
+    # Every 30 minutes (UTC). GitHub can delay a few minutes on free tier.
+    - cron: "0,30 * * * *"
+    # Daily maintenance 03:15 UTC
+    - cron: "15 3 * * *"
+  workflow_dispatch:
+    inputs:
+      jobs:
+        description: "Comma-separated jobs (news,market,publish,reaction,performance,maintenance)"
+        required: false
+        default: "news,market,publish,reaction,performance"
+
+concurrency:
+  group: midnight-society-cron
+  cancel-in-progress: false
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --omit=dev || npm install --omit=dev
+
+      - name: Run Midnight Society jobs
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_D1_DATABASE_ID: ${{ secrets.CLOUDFLARE_D1_DATABASE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OILPRICEAPI_KEY: ${{ secrets.OILPRICEAPI_KEY }}
+          CF_ALLOW_PRODUCTION_TELEGRAM: "true"
+          TELEGRAM_MAX_POSTS_PER_JOB: "1"
+          TELEGRAM_MIN_MINUTES_BETWEEN_POSTS: "10"
+          AI_PROVIDER_ORDER: "GEMINI,GROQ,OPENROUTER"
+          CF_MAX_RSS_SOURCES: "24"
+          CF_MAX_NEW_EVENTS: "5"
+          CF_MAX_AI_CALLS: "3"
+          CF_MAX_MARKET_EVENTS: "10"
+          CF_MAX_SYMBOLS_PER_EVENT: "4"
+        run: |
+          JOBS="${{ github.event.inputs.jobs }}"
+          if [ -z "$JOBS" ]; then
+            if [ "${{ github.event.schedule }}" = "15 3 * * *" ]; then
+              JOBS="maintenance"
+            else
+              JOBS="news,market,publish,reaction,performance"
+            fi
+          fi
+          node src/cloudflare/gha/runJobs.mjs --jobs="$JOBS"

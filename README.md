@@ -76,24 +76,41 @@ RSS / market feeds
 
 ---
 
-## Ops cheat sheet
+## Free ops: GitHub Actions + Cloudflare webhook
+
+Heavy jobs no longer use Cloudflare cron (Free plan CPU is too low).
+
+| Piece | Where it runs |
+|--------|----------------|
+| News / market / publish / reactions | **GitHub Actions** every 30 min (UTC) |
+| Welcome + preferences webhook | **Cloudflare Worker** (Free OK) |
+
+### One-time GitHub setup
+
+1. Create a Cloudflare API token: [API Tokens](https://dash.cloudflare.com/profile/api-tokens) → **Create Token** → template **Edit Cloudflare Workers** (or custom: Account → D1 → Edit, Account Settings → Read).
+2. In the GitHub repo → **Settings → Secrets and variables → Actions**, add:
+
+| Secret | Value |
+|--------|--------|
+| `CLOUDFLARE_ACCOUNT_ID` | from Workers dashboard (Account ID) |
+| `CLOUDFLARE_D1_DATABASE_ID` | `d1534914-a9dd-4362-b409-e5b07a28061f` |
+| `CLOUDFLARE_API_TOKEN` | token from step 1 |
+| `TELEGRAM_BOT_TOKEN` | bot token |
+| `TELEGRAM_CHANNEL_ID` | `@MidnightMarkets` |
+| `GOOGLE_API_KEY` | Gemini key |
+| `GROQ_API_KEY` | Groq key |
+| `OPENROUTER_API_KEY` | OpenRouter key |
+| `OILPRICEAPI_KEY` | optional |
+
+3. Push to `main`, then **Actions → Midnight Society Cron → Run workflow** to test.
+4. Deploy Worker once so crons are cleared: `npx wrangler deploy`
+
+Manual local-equivalent (CI only):
 
 ```bash
-# Deploy Worker
-npx wrangler deploy
-
-# Apply D1 migrations
-npx wrangler d1 migrations apply midnightmarketnews --remote
-
-# Secrets
-npx wrangler secret put TELEGRAM_BOT_TOKEN
-npx wrangler secret put TELEGRAM_CHANNEL_ID
-npx wrangler secret put GOOGLE_API_KEY
-npx wrangler secret put GROQ_API_KEY
-npx wrangler secret put OPENROUTER_API_KEY
+node src/cloudflare/gha/runJobs.mjs --jobs=news,publish
 ```
 
-Cron (UTC): news+market at `:00/:30`, publish at `:05/:35`, reactions at `:10/:40`, performance at `:15/:45`.
 
 ---
 

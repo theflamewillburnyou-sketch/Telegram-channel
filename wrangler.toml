@@ -35,21 +35,12 @@ CF_MAX_AI_CALLS = "3"
 CF_MAX_MARKET_EVENTS = "10"
 CF_MAX_SYMBOLS_PER_EVENT = "4"
 
-# Free Cloudflare Workers AI (no external key) — last LLM before rule fallback
+# Free Cloudflare Workers AI binding kept for optional Worker use / webhook path
 [ai]
 binding = "AI"
 
-# Cron Triggers (UTC). Propagation can take several minutes after deploy.
-# 0,30 — news + market every 30 minutes
-# 5,35 — publish sweep
-# 10,40 — reaction publish sweep
-# 15,45 — performance
-# 15 3 * * * — daily maintenance 03:15 UTC
+# Cron Triggers DISABLED for free plan.
+# Heavy jobs (news/market/publish) run on GitHub Actions (.github/workflows/midnight-cron.yml).
+# Worker remains for Telegram webhook (welcome + preferences) only.
 [triggers]
-crons = [
-  "0,30 * * * *",
-  "5,35 * * * *",
-  "10,40 * * * *",
-  "15,45 * * * *",
-  "15 3 * * *"
-]
+crons = []
