@@ -38,7 +38,12 @@ export function createRemoteD1(options) {
         payload?.errors?.[0]?.message ||
         payload?.messages?.[0]?.message ||
         `D1 HTTP ${response.status}`;
-      throw new Error(errMsg);
+      const errCode = payload?.errors?.[0]?.code;
+      throw new Error(
+        errCode
+          ? `D1 auth/query failed (${errCode}): ${errMsg}. Check CLOUDFLARE_API_TOKEN has Account → D1 → Edit for this account.`
+          : `D1 auth/query failed: ${errMsg}. Check CLOUDFLARE_API_TOKEN has Account → D1 → Edit for this account.`
+      );
     }
 
     const result = Array.isArray(payload.result)
