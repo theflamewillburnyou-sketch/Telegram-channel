@@ -3,6 +3,9 @@ main = "src/cloudflare/worker.js"
 compatibility_date = "2026-09-17"
 compatibility_flags = ["nodejs_compat"]
 
+# Always use Midnight Society Cloudflare account (not the portfolio account).
+account_id = "ff9f64713647f707f2fc19cf957ef49f"
+
 # Production DB binding — deploy MUST use database_id (midnightmarketnews).
 # Preview DB is only available as DB_PREVIEW for admin/migrations.
 # For remote dev against preview, use: npx wrangler dev --remote --persist=false
